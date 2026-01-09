@@ -1,15 +1,10 @@
 // ----------------- Supabase Config -----------------
-
-
-//Import the client from an ESM-compatible CDN
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co'
-const supabaseKey = process.env.SUPABASE_KEY
-const supabase = createClient(supabaseUrl, supabaseKey)
 
-//const SUPABASE_URL = "https://xjzyujkuqtxywcabeiaf.supabase.co";
-//const SUPABASE_ANON_KEY = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ";
-//const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co'
+// Fixed: Using the key string directly since process.env doesn't exist in browsers
+const supabaseKey = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ" 
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 // ----------------- Members -----------------
 const membersList = ["SHOHAN","NABIL","TOMAL","ABIR","MASUM"];
@@ -22,10 +17,8 @@ async function login(){
   const password = document.getElementById("password").value.trim();
   if(!email || !password){ alert("Enter email & password!"); return;}
 
-  // Try login first
   let { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  // If user does not exist, sign them up automatically
   if(error && error.message.includes("Invalid login credentials")){
     const { data: signupData, error: signupError } = await supabase.auth.signUp({ email, password });
     if(signupError){
@@ -45,6 +38,8 @@ async function login(){
   afterLogin();
 }
 
+// Expose to HTML
+window.login = login;
 document.getElementById("loginBtn").onclick = login;
 
 // ----------------- After login setup -----------------
@@ -54,7 +49,9 @@ function afterLogin(){
   isAdmin = (currentUser.email === "admin@mess.com");
   document.getElementById("loginDiv").style.display="none";
   document.getElementById("appDiv").style.display="block";
-  document.getElementById("adminTabBtn").style.display = isAdmin ? "inline-block" : "none";
+  
+  const adminBtn = document.getElementById("adminTabBtn");
+  if(adminBtn) adminBtn.style.display = isAdmin ? "inline-block" : "none";
 
   initMemberDropdowns();
   fetchData();
@@ -65,9 +62,9 @@ function afterLogin(){
 async function logout(){
   await supabase.auth.signOut();
   currentUser = null;
-  document.getElementById("appDiv").style.display="none";
-  document.getElementById("loginDiv").style.display="block";
+  location.reload(); // Refresh to clear state
 }
+window.logout = logout;
 
 // ----------------- Auth state -----------------
 supabase.auth.onAuthStateChange((event, session)=>{
@@ -95,6 +92,8 @@ function emailToMember(email){
 function initMemberDropdowns(){
   const mealSelect = document.getElementById("mealMember");
   const bazarSelect = document.getElementById("bazarMember");
+  if(!mealSelect || !bazarSelect) return;
+
   mealSelect.innerHTML=""; bazarSelect.innerHTML="";
   if(isAdmin){
     membersList.forEach(m=>{
@@ -127,7 +126,9 @@ async function addMeal(){
     await supabase.from('meals').insert([{member,date,added_by:currentUser.id}]);
   }
   document.getElementById("mealCount").value = 1;
+  fetchData(); // Refresh display
 }
+window.addMeal = addMeal;
 document.getElementById("addMealBtn").onclick = addMeal;
 
 // ----------------- Add Bazar -----------------
@@ -143,7 +144,9 @@ async function addBazar(){
 
   document.getElementById("bazarItem").value="";
   document.getElementById("bazarPrice").value="";
+  fetchData(); // Refresh display
 }
+window.addBazar = addBazar;
 document.getElementById("addBazarBtn").onclick = addBazar;
 
 // ----------------- Tabs -----------------
@@ -151,13 +154,17 @@ function openTab(tabName){
   document.querySelectorAll(".tab-content").forEach(tc=>tc.style.display="none");
   document.getElementById(tabName).style.display="block";
   document.querySelectorAll(".tab-btn").forEach(btn=>btn.classList.remove("active"));
-  event.currentTarget.classList.add("active");
+  if(event) event.currentTarget.classList.add("active");
 }
+window.openTab = openTab;
 
 // ----------------- Fetch & Render -----------------
 async function fetchData(){
   let { data: meals } = await supabase.from('meals').select('*');
   let { data: bazar } = await supabase.from('bazar').select('*');
+
+  if(!meals) meals = [];
+  if(!bazar) bazar = [];
 
   if(!isAdmin){
     meals = meals.filter(m=>m.added_by===currentUser.id);
@@ -176,9 +183,9 @@ function renderCalendar(mealsSnap){
   const month = today.getMonth();
   const daysInMonth = new Date(year,month+1,0).getDate();
 
-  let table = "<tr><th>Day</th>";
+  let table = "<thead><tr><th>Day</th>";
   membersList.forEach(m=>table+=`<th>${m}</th>`); 
-  table+="</tr>";
+  table+="</tr></thead><tbody>";
 
   for(let d=1; d<=daysInMonth; d++){
     const dd = d.toString().padStart(2,'0');
@@ -191,11 +198,13 @@ function renderCalendar(mealsSnap){
     });
     table += "</tr>";
   }
+  table += "</tbody>";
   document.getElementById("mealCalendar").innerHTML = table;
 }
 
 function renderBazar(bazarSnap){
   const tbody = document.querySelector("#bazarTable tbody");
+  if(!tbody) return;
   tbody.innerHTML="";
   bazarSnap.forEach(b=>{
     tbody.innerHTML+=`<tr>
@@ -224,7 +233,7 @@ function renderSummary(mealsSnap,bazarSnap){
     const memberBazar = bazarSnap.filter(b=>b.member===m).reduce((s,b)=>s+b.price,0);
     const mealCost = memberMeals[m]*mealRate;
     const balance = memberBazar - mealCost;
-    summary += `<p><b>${m}</b> | Meal: ${memberMeals[m]} | Paid: ${memberBazar}৳ | Should Pay/Receive: ${balance.toFixed(2)}৳</p>`;
+    summary += `<p><b>${m}</b> | Meal: ${memberMeals[m]} | Paid: ${memberBazar}৳ | Balance: ${balance.toFixed(2)}৳</p>`;
   });
 
   document.getElementById("summaryContent").innerHTML = summary;
@@ -238,29 +247,34 @@ async function fetchAdminData(){
   const { data: bazar } = await supabase.from('bazar').select('*');
 
   const mealTbody = document.querySelector("#adminMeals tbody");
-  mealTbody.innerHTML="";
-  meals.forEach(m=>{
-    mealTbody.innerHTML += `<tr>
-      <td>${m.date}</td>
-      <td>${m.member}</td>
-      <td><button onclick="deleteMeal('${m.id}')">Delete</button></td>
-    </tr>`;
-  });
+  if(mealTbody){
+      mealTbody.innerHTML="";
+      meals.forEach(m=>{
+        mealTbody.innerHTML += `<tr>
+          <td>${m.date}</td>
+          <td>${m.member}</td>
+          <td><button onclick="deleteMeal('${m.id}')">Delete</button></td>
+        </tr>`;
+      });
+  }
 
   const bazarTbody = document.querySelector("#adminBazar tbody");
-  bazarTbody.innerHTML="";
-  bazar.forEach(b=>{
-    bazarTbody.innerHTML += `<tr>
-      <td>${b.date}</td>
-      <td>${b.member}</td>
-      <td>${b.item}</td>
-      <td>${b.price}৳</td>
-      <td><button onclick="deleteBazar('${b.id}')">Delete</button></td>
-    </tr>`;
-  });
+  if(bazarTbody){
+      bazarTbody.innerHTML="";
+      bazar.forEach(b=>{
+        bazarTbody.innerHTML += `<tr>
+          <td>${b.date}</td>
+          <td>${b.member}</td>
+          <td>${b.item}</td>
+          <td>${b.price}৳</td>
+          <td><button onclick="deleteBazar('${b.id}')">Delete</button></td>
+        </tr>`;
+      });
+  }
 }
 
 async function deleteMeal(id){ if(isAdmin) await supabase.from('meals').delete().eq('id',id); fetchData(); fetchAdminData(); }
 async function deleteBazar(id){ if(isAdmin) await supabase.from('bazar').delete().eq('id',id); fetchData(); fetchAdminData(); }
 
-
+window.deleteMeal = deleteMeal;
+window.deleteBazar = deleteBazar;
