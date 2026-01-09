@@ -1,280 +1,225 @@
-// ----------------- Supabase Config -----------------
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
+// ----------------- Supabase Config -----------------
 const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co'
-// Fixed: Using the key string directly since process.env doesn't exist in browsers
 const supabaseKey = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ" 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// ----------------- Members -----------------
+// ----------------- Global State -----------------
 const membersList = ["SHOHAN","NABIL","TOMAL","ABIR","MASUM"];
 let currentUser = null;
 let isAdmin = false;
 
-// ----------------- Login / Signup -----------------
-async function login(){
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-  if(!email || !password){ alert("Enter email & password!"); return;}
+// ----------------- Login Logic -----------------
+async function login() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    if(!email || !password) { alert("Enter email & password!"); return; }
 
-  let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    let { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if(error && error.message.includes("Invalid login credentials")){
-    const { data: signupData, error: signupError } = await supabase.auth.signUp({ email, password });
-    if(signupError){
-      document.getElementById("loginMsg").innerText = signupError.message;
-      return;
+    if(error && error.message.includes("Invalid login credentials")) {
+        const { data: signupData, error: signupError } = await supabase.auth.signUp({ email, password });
+        if(signupError) {
+            document.getElementById("loginMsg").innerText = signupError.message;
+            return;
+        }
+        alert("Account created! Please check your email or login again.");
+        return;
     }
-    alert("Account created! Please login again.");
-    return;
-  }
 
-  if(error){ 
-    document.getElementById("loginMsg").innerText = error.message; 
-    return; 
-  }
-
-  currentUser = data.user;
-  afterLogin();
+    if(error) { 
+        document.getElementById("loginMsg").innerText = error.message; 
+        return; 
+    }
 }
 
-// Expose to HTML
-window.login = login;
-document.getElementById("loginBtn").onclick = login;
-
-// ----------------- After login setup -----------------
-function afterLogin(){
-  if(!currentUser) return;
-
-  isAdmin = (currentUser.email === "admin@mess.com");
-  document.getElementById("loginDiv").style.display="none";
-  document.getElementById("appDiv").style.display="block";
-  
-  const adminBtn = document.getElementById("adminTabBtn");
-  if(adminBtn) adminBtn.style.display = isAdmin ? "inline-block" : "none";
-
-  initMemberDropdowns();
-  fetchData();
-  if(isAdmin) fetchAdminData();
+async function logout() {
+    await supabase.auth.signOut();
+    location.reload(); 
 }
 
-// ----------------- Logout -----------------
-async function logout(){
-  await supabase.auth.signOut();
-  currentUser = null;
-  location.reload(); // Refresh to clear state
-}
-window.logout = logout;
+// ----------------- UI Management -----------------
+function afterLogin() {
+    if(!currentUser) return;
+    isAdmin = (currentUser.email === "admin@mess.com");
+    
+    document.getElementById("loginDiv").style.display = "none";
+    document.getElementById("appDiv").style.display = "block";
+    document.getElementById("adminTabBtn").style.display = isAdmin ? "inline-block" : "none";
 
-// ----------------- Auth state -----------------
-supabase.auth.onAuthStateChange((event, session)=>{
-  if(session){
-    currentUser = session.user;
-    afterLogin();
-  } else {
-    document.getElementById("loginDiv").style.display="block";
-    document.getElementById("appDiv").style.display="none";
-  }
-});
-
-// ----------------- Helpers -----------------
-function emailToMember(email){
-  switch(email){
-    case "shohan@mess.com": return "SHOHAN";
-    case "nabil@mess.com": return "NABIL";
-    case "tomal@mess.com": return "TOMAL";
-    case "abir@mess.com": return "ABIR";
-    case "masum@mess.com": return "MASUM";
-    default: return null;
-  }
+    initMemberDropdowns();
+    fetchData();
 }
 
-function initMemberDropdowns(){
-  const mealSelect = document.getElementById("mealMember");
-  const bazarSelect = document.getElementById("bazarMember");
-  if(!mealSelect || !bazarSelect) return;
+function openTab(tabName) {
+    document.querySelectorAll(".tab-content").forEach(tc => tc.style.display = "none");
+    document.getElementById(tabName).style.display = "block";
+    document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+    if (event) event.currentTarget.classList.add("active");
+    
+    if(tabName === 'admin' && isAdmin) fetchAdminData();
+}
 
-  mealSelect.innerHTML=""; bazarSelect.innerHTML="";
-  if(isAdmin){
-    membersList.forEach(m=>{
-      mealSelect.innerHTML += `<option value="${m}">${m}</option>`;
-      bazarSelect.innerHTML += `<option value="${m}">${m}</option>`;
+// ----------------- Data Actions -----------------
+async function addMeal() {
+    let member = document.getElementById("mealMember").value;
+    const count = Number(document.getElementById("mealCount").value);
+    if(!member || count <= 0) return;
+
+    const date = getTodayStr();
+    const inserts = [];
+    for(let i=0; i<count; i++) {
+        inserts.push({ member, date, added_by: currentUser.id });
+    }
+    await supabase.from('meals').insert(inserts);
+    fetchData();
+}
+
+async function addBazar() {
+    let member = document.getElementById("bazarMember").value;
+    const item = document.getElementById("bazarItem").value.trim();
+    const price = Number(document.getElementById("bazarPrice").value);
+    if(!member || !item || price <= 0) return;
+
+    await supabase.from('bazar').insert([{
+        member, item, price, date: getTodayStr(), added_by: currentUser.id
+    }]);
+    
+    document.getElementById("bazarItem").value = "";
+    document.getElementById("bazarPrice").value = "";
+    fetchData();
+}
+
+// ----------------- Helpers & Rendering -----------------
+function getTodayStr() {
+    return new Date().toISOString().split('T')[0];
+}
+
+function initMemberDropdowns() {
+    const mealSelect = document.getElementById("mealMember");
+    const bazarSelect = document.getElementById("bazarMember");
+    let options = "";
+    
+    if(isAdmin) {
+        membersList.forEach(m => options += `<option value="${m}">${m}</option>`);
+    } else {
+        const m = emailToMember(currentUser.email);
+        options = `<option value="${m}">${m}</option>`;
+    }
+    mealSelect.innerHTML = options;
+    bazarSelect.innerHTML = options;
+}
+
+function emailToMember(email) {
+    const mapping = {
+        "shohan@mess.com": "SHOHAN",
+        "nabil@mess.com": "NABIL",
+        "tomal@mess.com": "TOMAL",
+        "abir@mess.com": "ABIR",
+        "masum@mess.com": "MASUM"
+    };
+    return mapping[email] || "Unknown";
+}
+
+async function fetchData() {
+    const { data: meals } = await supabase.from('meals').select('*');
+    const { data: bazar } = await supabase.from('bazar').select('*');
+    
+    renderCalendar(meals || []);
+    renderBazar(bazar || []);
+    renderSummary(meals || [], bazar || []);
+}
+
+function renderCalendar(mealsSnap) {
+    const d = new Date();
+    const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    const monthStr = (d.getMonth() + 1).toString().padStart(2, '0');
+
+    let table = `<tr><th>Day</th>${membersList.map(m => `<th>${m}</th>`).join('')}</tr>`;
+
+    for (let i = 1; i <= daysInMonth; i++) {
+        const dateStr = `${d.getFullYear()}-${monthStr}-${i.toString().padStart(2, '0')}`;
+        table += `<tr><td>${i}</td>`;
+        membersList.forEach(m => {
+            const count = mealsSnap.filter(meal => meal.date === dateStr && meal.member === m).length;
+            table += `<td>${count || '-'}</td>`;
+        });
+        table += `</tr>`;
+    }
+    document.getElementById("mealCalendar").innerHTML = table;
+}
+
+function renderBazar(bazarSnap) {
+    const tbody = document.querySelector("#bazarTable tbody");
+    tbody.innerHTML = bazarSnap.map(b => `
+        <tr><td>${b.date}</td><td>${b.member}</td><td>${b.item}</td><td>${b.price}৳</td></tr>
+    `).join('');
+}
+
+function renderSummary(mealsSnap, bazarSnap) {
+    const totalBazar = bazarSnap.reduce((s, b) => s + b.price, 0);
+    const totalMeals = mealsSnap.length;
+    const mealRate = totalMeals ? (totalBazar / totalMeals).toFixed(2) : 0;
+
+    let html = `<p>Total Bazar: ${totalBazar}৳ | Total Meals: ${totalMeals} | Rate: ${mealRate}৳</p><hr>`;
+    
+    membersList.forEach(m => {
+        const mMeals = mealsSnap.filter(meal => meal.member === m).length;
+        const mPaid = bazarSnap.filter(b => b.member === m).reduce((s, b) => s + b.price, 0);
+        const balance = (mPaid - (mMeals * mealRate)).toFixed(2);
+        html += `<p><b>${m}:</b> Meals: ${mMeals}, Paid: ${mPaid}৳, Balance: ${balance}৳</p>`;
     });
-  } else {
-    const m = emailToMember(currentUser.email);
-    mealSelect.innerHTML = `<option value="${m}">${m}</option>`;
-    bazarSelect.innerHTML = `<option value="${m}">${m}</option>`;
-  }
+    document.getElementById("summaryContent").innerHTML = html;
 }
 
-function getTodayStr(){
-  const d = new Date();
-  const mm = (d.getMonth()+1).toString().padStart(2,'0');
-  const dd = d.getDate().toString().padStart(2,'0');
-  return `${d.getFullYear()}-${mm}-${dd}`;
+async function fetchAdminData() {
+    const { data: meals } = await supabase.from('meals').select('*').order('date', {ascending: false});
+    const { data: bazar } = await supabase.from('bazar').select('*').order('date', {ascending: false});
+
+    document.querySelector("#adminMeals tbody").innerHTML = (meals || []).map(m => `
+        <tr><td>${m.date}</td><td>${m.member}</td><td><button onclick="deleteMeal('${m.id}')">❌</button></td></tr>
+    `).join('');
+
+    document.querySelector("#adminBazar tbody").innerHTML = (bazar || []).map(b => `
+        <tr><td>${b.date}</td><td>${b.member}</td><td>${b.item}</td><td>${b.price}৳</td><td><button onclick="deleteBazar('${b.id}')">❌</button></td></tr>
+    `).join('');
 }
 
-// ----------------- Add Meal -----------------
-async function addMeal(){
-  let member = document.getElementById("mealMember").value;
-  if(!isAdmin) member = emailToMember(currentUser.email);
-  const count = Number(document.getElementById("mealCount").value);
-  if(!member || count<=0) return;
-
-  const date = getTodayStr();
-  for(let i=0;i<count;i++){
-    await supabase.from('meals').insert([{member,date,added_by:currentUser.id}]);
-  }
-  document.getElementById("mealCount").value = 1;
-  fetchData(); // Refresh display
+// ----------------- DELETE ACTIONS -----------------
+async function deleteMeal(id) {
+    if(!confirm("Delete this meal?")) return;
+    await supabase.from('meals').delete().eq('id', id);
+    fetchAdminData();
+    fetchData();
 }
-window.addMeal = addMeal;
-document.getElementById("addMealBtn").onclick = addMeal;
 
-// ----------------- Add Bazar -----------------
-async function addBazar(){
-  let member = document.getElementById("bazarMember").value;
-  if(!isAdmin) member = emailToMember(currentUser.email);
-  const item = document.getElementById("bazarItem").value.trim();
-  const price = Number(document.getElementById("bazarPrice").value);
-  if(!member || !item || price<=0) return;
-
-  const date = getTodayStr();
-  await supabase.from('bazar').insert([{member,item,price,date,added_by:currentUser.id}]);
-
-  document.getElementById("bazarItem").value="";
-  document.getElementById("bazarPrice").value="";
-  fetchData(); // Refresh display
+async function deleteBazar(id) {
+    if(!confirm("Delete this bazar item?")) return;
+    await supabase.from('bazar').delete().eq('id', id);
+    fetchAdminData();
+    fetchData();
 }
-window.addBazar = addBazar;
-document.getElementById("addBazarBtn").onclick = addBazar;
 
-// ----------------- Tabs -----------------
-function openTab(tabName){
-  document.querySelectorAll(".tab-content").forEach(tc=>tc.style.display="none");
-  document.getElementById(tabName).style.display="block";
-  document.querySelectorAll(".tab-btn").forEach(btn=>btn.classList.remove("active"));
-  if(event) event.currentTarget.classList.add("active");
-}
+// ----------------- CRITICAL: EXPOSE TO WINDOW -----------------
+// This makes the functions available to the HTML onclick events
 window.openTab = openTab;
-
-// ----------------- Fetch & Render -----------------
-async function fetchData(){
-  let { data: meals } = await supabase.from('meals').select('*');
-  let { data: bazar } = await supabase.from('bazar').select('*');
-
-  if(!meals) meals = [];
-  if(!bazar) bazar = [];
-
-  if(!isAdmin){
-    meals = meals.filter(m=>m.added_by===currentUser.id);
-    bazar = bazar.filter(b=>b.added_by===currentUser.id);
-  }
-
-  renderCalendar(meals);
-  renderBazar(bazar);
-  renderSummary(meals,bazar);
-}
-
-// ----------------- Render Functions -----------------
-function renderCalendar(mealsSnap){
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const daysInMonth = new Date(year,month+1,0).getDate();
-
-  let table = "<thead><tr><th>Day</th>";
-  membersList.forEach(m=>table+=`<th>${m}</th>`); 
-  table+="</tr></thead><tbody>";
-
-  for(let d=1; d<=daysInMonth; d++){
-    const dd = d.toString().padStart(2,'0');
-    const mm = (month+1).toString().padStart(2,'0');
-    const dateStr = `${year}-${mm}-${dd}`;
-    table += `<tr><td>${d}</td>`;
-    membersList.forEach(m=>{
-      const count = mealsSnap.filter(meal=>meal.date===dateStr && meal.member===m).length;
-      table += `<td>${count}</td>`;
-    });
-    table += "</tr>";
-  }
-  table += "</tbody>";
-  document.getElementById("mealCalendar").innerHTML = table;
-}
-
-function renderBazar(bazarSnap){
-  const tbody = document.querySelector("#bazarTable tbody");
-  if(!tbody) return;
-  tbody.innerHTML="";
-  bazarSnap.forEach(b=>{
-    tbody.innerHTML+=`<tr>
-      <td>${b.date}</td>
-      <td>${b.member}</td>
-      <td>${b.item}</td>
-      <td>${b.price}৳</td>
-    </tr>`;
-  });
-}
-
-function renderSummary(mealsSnap,bazarSnap){
-  let summary="";
-  const totalBazar = bazarSnap.reduce((s,b)=>s+b.price,0);
-  const memberMeals = {};
-  membersList.forEach(m=>memberMeals[m]=0);
-  mealsSnap.forEach(m=>memberMeals[m.member]++);
-  const totalMeal = mealsSnap.length;
-  const mealRate = totalMeal ? (totalBazar/totalMeal).toFixed(2) : 0;
-
-  summary += `<p><b>Total Bazar:</b> ${totalBazar}৳</p>`;
-  summary += `<p><b>Total Meal:</b> ${totalMeal}</p>`;
-  summary += `<p><b>Meal Rate:</b> ${mealRate}৳</p><hr>`;
-
-  membersList.forEach(m=>{
-    const memberBazar = bazarSnap.filter(b=>b.member===m).reduce((s,b)=>s+b.price,0);
-    const mealCost = memberMeals[m]*mealRate;
-    const balance = memberBazar - mealCost;
-    summary += `<p><b>${m}</b> | Meal: ${memberMeals[m]} | Paid: ${memberBazar}৳ | Balance: ${balance.toFixed(2)}৳</p>`;
-  });
-
-  document.getElementById("summaryContent").innerHTML = summary;
-}
-
-// ----------------- Admin -----------------
-async function fetchAdminData(){
-  if(!isAdmin) return;
-
-  const { data: meals } = await supabase.from('meals').select('*');
-  const { data: bazar } = await supabase.from('bazar').select('*');
-
-  const mealTbody = document.querySelector("#adminMeals tbody");
-  if(mealTbody){
-      mealTbody.innerHTML="";
-      meals.forEach(m=>{
-        mealTbody.innerHTML += `<tr>
-          <td>${m.date}</td>
-          <td>${m.member}</td>
-          <td><button onclick="deleteMeal('${m.id}')">Delete</button></td>
-        </tr>`;
-      });
-  }
-
-  const bazarTbody = document.querySelector("#adminBazar tbody");
-  if(bazarTbody){
-      bazarTbody.innerHTML="";
-      bazar.forEach(b=>{
-        bazarTbody.innerHTML += `<tr>
-          <td>${b.date}</td>
-          <td>${b.member}</td>
-          <td>${b.item}</td>
-          <td>${b.price}৳</td>
-          <td><button onclick="deleteBazar('${b.id}')">Delete</button></td>
-        </tr>`;
-      });
-  }
-}
-
-async function deleteMeal(id){ if(isAdmin) await supabase.from('meals').delete().eq('id',id); fetchData(); fetchAdminData(); }
-async function deleteBazar(id){ if(isAdmin) await supabase.from('bazar').delete().eq('id',id); fetchData(); fetchAdminData(); }
-
+window.logout = logout;
 window.deleteMeal = deleteMeal;
 window.deleteBazar = deleteBazar;
+
+// Event Listeners for buttons that don't use onclick in HTML
+document.getElementById("loginBtn").addEventListener("click", login);
+document.getElementById("addMealBtn").addEventListener("click", addMeal);
+document.getElementById("addBazarBtn").addEventListener("click", addBazar);
+
+// Auth Listener
+supabase.auth.onAuthStateChange((event, session) => {
+    if (session) {
+        currentUser = session.user;
+        afterLogin();
+    } else {
+        document.getElementById("loginDiv").style.display = "block";
+        document.getElementById("appDiv").style.display = "none";
+    }
+});
