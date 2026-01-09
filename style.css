@@ -1,34 +1,130 @@
 :root {
-    --primary: #3498db;
-    --secondary: #2ecc71;
-    --danger: #e74c3c;
-    --dark: #2c3e50;
-    --light: #f4f7f6;
-    --white: #ffffff;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --primary: #1e293b;
+    --accent: #3b82f6;
+    --success: #10b981;
+    --danger: #ef4444;
+    --border: #e2e8f0;
+    --text-main: #334155;
+    --text-muted: #64748b;
 }
 
-body { font-family: 'Segoe UI', sans-serif; background: var(--light); padding: 15px; margin: 0; }
-.card { background: var(--white); padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-.highlight-card { border-left: 5px solid var(--primary); }
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background-color: var(--bg);
+    color: var(--text-main);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.5;
+}
 
-h1 { text-align: center; color: var(--dark); }
-input, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+.container { max-width: 1000px; margin: 0 auto; }
 
-.btn-primary { background: var(--primary); color: white; }
-.btn-success { background: var(--secondary); color: white; }
-.logout-btn { background: #eee; color: var(--danger); width: auto; float: right; padding: 5px 10px; }
+/* Login */
+.login-card {
+    max-width: 400px;
+    margin: 100px auto;
+    background: var(--surface);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+    text-align: center;
+}
 
-.tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; }
-.tab-btn { background: #ddd; flex: 1; white-space: nowrap; font-size: 14px; }
-.tab-btn.active { background: var(--primary); color: white; }
+/* Dashboard Cards */
+.card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
 
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th, td { border: 1px solid #eee; padding: 8px; text-align: center; }
-th { background: #f8f9fa; }
+.highlight-card { border-top: 4px solid var(--accent); }
 
-.receipt-card { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-.receipt-info { font-size: 12px; color: #777; }
-.receipt-main { font-weight: bold; }
+/* Navigation */
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    background: #f1f5f9;
+    padding: 0.5rem;
+    border-radius: 10px;
+}
 
-.admin-badge { background: #fff3cd; color: #856404; font-size: 10px; padding: 2px 5px; border-radius: 4px; }
+.tab-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    background: var(--surface);
+    color: var(--accent);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+/* Table Design */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background: var(--surface);
+}
+
+.data-table th {
+    background: #f8fafc;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 1rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--border);
+}
+
+.data-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.data-table tr:hover { background: #f1f5f9; }
+
+/* Inputs & Buttons */
+input, select {
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.btn-main {
+    background: var(--primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.logout-btn {
+    background: var(--danger);
+    font-size: 0.8rem;
+    margin-left: auto;
+}
+
+@media (max-width: 600px) {
+    .tabs { flex-wrap: wrap; }
+    .tab-btn { flex: unset; width: 48%; }
+}
