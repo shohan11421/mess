@@ -1,7 +1,14 @@
 // ----------------- Supabase Config -----------------
-const SUPABASE_URL = "https://xjzyujkuqtxywcabeiaf.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ";
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+import { createClient } from '@supabase/supabase-js'
+const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co'
+const supabaseKey = process.env.SUPABASE_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+//const SUPABASE_URL = "https://xjzyujkuqtxywcabeiaf.supabase.co";
+//const SUPABASE_ANON_KEY = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ";
+//const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ----------------- Members -----------------
 const membersList = ["SHOHAN","NABIL","TOMAL","ABIR","MASUM"];
@@ -254,3 +261,4 @@ async function fetchAdminData(){
 
 async function deleteMeal(id){ if(isAdmin) await supabase.from('meals').delete().eq('id',id); fetchData(); fetchAdminData(); }
 async function deleteBazar(id){ if(isAdmin) await supabase.from('bazar').delete().eq('id',id); fetchData(); fetchAdminData(); }
+
