@@ -2,63 +2,67 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Mess Manager</title>
+    <title>Mess Manager Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>🏢 Mess Manager</h1>
-    <div id="loginDiv" class="card">
-        <input type="email" id="email" placeholder="Email"><br>
-        <input type="password" id="password" placeholder="Password"><br>
-        <button id="loginBtn" class="btn-primary">Login</button>
-        <p id="loginMsg" style="color:red"></p>
-    </div>
-
-    <div id="appDiv" style="display:none">
-        <div id="personalDashboard" class="card highlight-card">
-            <h3>👤 Personal Stats</h3>
-            <div id="myStatsContent"></div>
+    <div class="container">
+        <div id="loginDiv" class="login-card">
+            <h2>🏠 Mess Manager</h2>
+            <p style="color:var(--text-muted)">Sign in to manage your mess</p>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button id="loginBtn" class="btn-main">Login</button>
+            <p id="loginMsg"></p>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="openTab('calendar')">📅 Meals</button>
-            <button class="tab-btn" onclick="openTab('bazar')">🛒 Bazar</button>
-            <button class="tab-btn" onclick="openTab('summary')">📊 Summary</button>
-            <button class="tab-btn" id="adminTabBtn" style="display:none" onclick="openTab('admin')">🛠 Admin</button>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
+        <div id="appDiv" style="display:none">
+            <div id="personalStats" class="card highlight-card"></div>
 
-        <div id="calendar" class="tab-content">
-            <div class="card">
-                <h3>Add Meal</h3>
-                <select id="mealMember"></select>
-                <input type="date" id="mealDate" class="admin-date">
-                <input type="number" id="mealCount" value="1" min="1">
-                <button id="addMealBtn" class="btn-primary">Add Plate(s)</button>
+            <nav class="tabs">
+                <button class="tab-btn active" onclick="openTab('calendar')">📅 Meal Calendar</button>
+                <button class="tab-btn" onclick="openTab('bazar')">🛒 Bazar List</button>
+                <button class="tab-btn" onclick="openTab('summary')">📊 Summary</button>
+                <button class="tab-btn logout-btn" onclick="logout()">Logout</button>
+            </nav>
+
+            <div id="calendar" class="tab-content">
+                <div class="card">
+                    <h3>Record Meals</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                        <select id="mealMember"></select>
+                        <input type="date" id="mealDate" class="admin-only">
+                    </div>
+                    <input type="number" id="mealCount" value="1" min="1">
+                    <button onclick="addMeal()" class="btn-main">Add Meal Records</button>
+                </div>
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>Attendance</h3>
+                        <select id="viewMonth" onchange="fetchData()" style="width:auto; margin:0;"></select>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table id="mealCalendar" class="data-table"></table>
+                    </div>
+                </div>
             </div>
-            <select id="viewMonth" onchange="fetchData()"></select>
-            <div style="overflow-x:auto;"><table id="mealCalendar"></table></div>
-        </div>
 
-        <div id="bazar" class="tab-content" style="display:none">
-            <div class="card">
-                <h3>Add Bazar</h3>
-                <select id="bazarMember"></select>
-                <input type="date" id="bazarDate" class="admin-date">
-                <input type="text" id="bazarItem" placeholder="Item Name">
-                <input type="number" id="bazarPrice" placeholder="Price">
-                <button id="addBazarBtn" class="btn-success">Save Entry</button>
+            <div id="bazar" class="tab-content" style="display:none">
+                <div class="card">
+                    <h3>New Purchase</h3>
+                    <select id="bazarMember"></select>
+                    <input type="text" id="bazarItem" placeholder="Item Name (e.g. Fish)">
+                    <input type="number" id="bazarPrice" placeholder="Amount in ৳">
+                    <button onclick="addBazar()" class="btn-main" style="background:var(--success)">Save Entry</button>
+                </div>
+                <div class="card" id="bazarList"></div>
             </div>
-            <div id="bazarList" class="card"></div>
-        </div>
 
-        <div id="summary" class="tab-content" style="display:none">
-            <div id="summaryContent" class="card"></div>
-        </div>
-
-        <div id="admin" class="tab-content" style="display:none">
-            <div class="card"><h3>Admin Table Controls</h3><p>Manage raw data here...</p></div>
+            <div id="summary" class="tab-content" style="display:none">
+                <div class="card" id="summaryContent"></div>
+            </div>
         </div>
     </div>
     <script type="module" src="app.js"></script>
