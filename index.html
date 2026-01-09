@@ -10,9 +10,8 @@
 <body>
     <div class="container">
         <div id="loginDiv" class="card login-card">
-            <h2>🏢 Mess Manager</h2>
-            <p>Sign in to access the dashboard</p>
-            <input type="email" id="email" placeholder="Email (e.g. shohan@mess.com)">
+            <h2>🏠 Mess Manager</h2>
+            <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button id="loginBtn" class="btn btn-primary">Login</button>
             <p id="loginMsg" class="error-text"></p>
@@ -28,6 +27,7 @@
                 <button class="tab-btn active" onclick="openTab('calendar')">📅 Attendance</button>
                 <button class="tab-btn" onclick="openTab('bazar')">🛒 Bazar</button>
                 <button class="tab-btn" onclick="openTab('summary')">📊 Summary</button>
+                <button id="adminTabBtn" class="tab-btn" style="display:none" onclick="openTab('admin')">🛠 Admin</button>
             </nav>
 
             <div id="calendar" class="tab-content">
@@ -35,7 +35,7 @@
                     <h3>Add Meal Record</h3>
                     <div class="form-grid">
                         <select id="mealMember"></select>
-                        <input type="date" id="mealDate" class="admin-only">
+                        <input type="date" id="mealDate" class="admin-only" style="display:none">
                         <input type="number" id="mealCount" value="1" min="1">
                         <button onclick="addMeal()" class="btn btn-primary">Save Meal</button>
                     </div>
@@ -56,7 +56,7 @@
                     <h3>Add Bazar Expense</h3>
                     <div class="form-grid">
                         <select id="bazarMember"></select>
-                        <input type="date" id="bazarDate" class="admin-only">
+                        <input type="date" id="bazarDate" class="admin-only" style="display:none">
                         <input type="text" id="bazarItem" placeholder="What did you buy?">
                         <input type="number" id="bazarPrice" placeholder="Cost (৳)">
                         <button onclick="addBazar()" class="btn btn-success">Save Entry</button>
@@ -67,6 +67,19 @@
 
             <div id="summary" class="tab-content" style="display:none">
                 <div id="summaryContent" class="card no-padding"></div>
+            </div>
+
+            <div id="admin" class="tab-content" style="display:none">
+                <div class="admin-grid">
+                    <div class="card">
+                        <h4>Manage Meals</h4>
+                        <div class="small-table"><table class="pro-table" id="adminMealTable"></table></div>
+                    </div>
+                    <div class="card">
+                        <h4>Manage Bazar</h4>
+                        <div class="small-table"><table class="pro-table" id="adminBazarTable"></table></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
