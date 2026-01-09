@@ -8,48 +8,18 @@ const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "MASUM"];
 let currentUser = null;
 let isAdmin = false;
 
-// --- HELPERS ---
 const getToday = () => new Date().toLocaleDateString('en-CA');
 
-const checkDateWindow = (selectedDate) => {
-    const d = new Date(selectedDate);
-    const now = new Date();
-    const limit = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return d >= limit;
-};
-
-// --- AUTH ---
-async function login() {
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if(error) document.getElementById("loginMsg").innerText = "Invalid credentials";
-}
-
-window.logout = () => supabase.auth.signOut().then(() => location.reload());
-
-// --- CORE DATA ---
-async function fetchData() {
-    const month = document.getElementById("viewMonth").value;
-    const { data: meals } = await supabase.from('meals').select('*').gte('date', `${month}-01`).lte('date', `${month}-31`);
-    const { data: bazar } = await supabase.from('bazar').select('*').gte('date', `${month}-01`).lte('date', `${month}-31`);
-    
-    renderCalendar(meals || [], month);
-    renderPersonalStats(meals || [], bazar || []);
-    renderSummary(meals || [], bazar || []);
-    renderBazarList(bazar || []);
-}
-
-// --- ACTIONS ---
+// --- DATA ACTIONS ---
 window.addMeal = async () => {
     const member = document.getElementById("mealMember").value;
     const count = parseInt(document.getElementById("mealCount").value);
     const date = isAdmin ? document.getElementById("mealDate").value : getToday();
 
-    if (!checkDateWindow(date)) return alert("Forbidden: Older than previous month.");
-    
     const entries = Array.from({length: count}, () => ({ member, date, added_by: currentUser.id }));
     await supabase.from('meals').insert(entries);
+    
+    document.getElementById("mealCount").value = 1; // Reset
     fetchData();
 };
 
@@ -59,32 +29,56 @@ window.addBazar = async () => {
     const price = Number(document.getElementById("bazarPrice").value);
     const date = isAdmin ? document.getElementById("bazarDate").value : getToday();
 
-    if (!checkDateWindow(date)) return alert("Forbidden: Older than previous month.");
+    if(!item || !price) return alert("Fill all fields");
+
     await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]);
+    
+    // Privacy Fix: Clear inputs after saving
+    document.getElementById("bazarItem").value = "";
+    document.getElementById("bazarPrice").value = "";
+    
     fetchData();
 };
+
+async function fetchData() {
+    const month = document.getElementById("viewMonth").value;
+    const { data: meals } = await supabase.from('meals').select('*').gte('date', `${month}-01`).lte('date', `${month}-31`);
+    const { data: bazar } = await supabase.from('bazar').select('*').gte('date', `${month}-01`).lte('date', `${month}-31`);
+    
+    renderCalendar(meals || [], month);
+    renderSummary(meals || [], bazar || []);
+    renderBazarList(bazar || []);
+    if(isAdmin) renderAdmin(meals || [], bazar || []);
+}
 
 // --- RENDERING ---
 function renderSummary(mList, bList) {
     const totalBazar = bList.reduce((s, b) => s + b.price, 0);
-    const rate = mList.length ? (totalBazar / mList.length).toFixed(2) : 0;
+    const totalMeals = mList.length;
+    const rate = totalMeals ? (totalBazar / totalMeals).toFixed(2) : 0;
     
     let html = `
-        <div class="summary-stats">
+        <div class="summary-stats-banner">
             <div>TOTAL BAZAR: <b>${totalBazar}৳</b></div>
+            <div>TOTAL MEALS: <b>${totalMeals}</b></div>
             <div>MEAL RATE: <b>${rate}৳</b></div>
         </div>
         <table class="pro-table">
-            <thead><tr><th>Member</th><th>Meals</th><th>Paid</th><th>Status</th></tr></thead>
+            <thead><tr><th>Member</th><th>Meals</th><th>Cost</th><th>Paid</th><th>Balance</th></tr></thead>
             <tbody>`;
 
     membersList.forEach(m => {
         const meals = mList.filter(ml => ml.member === m).length;
         const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
-        const cost = (meals * rate);
+        const cost = (meals * rate).toFixed(2);
         const bal = (paid - cost).toFixed(2);
-        html += `<tr><td><b>${m}</b></td><td>${meals}</td><td>${paid}৳</td>
-                 <td style="color:${bal >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:600">${bal}৳</td></tr>`;
+        html += `<tr>
+            <td><b>${m}</b></td>
+            <td>${meals}</td>
+            <td>${cost}৳</td>
+            <td>${paid}৳</td>
+            <td style="color:${bal >= 0 ? '#059669' : '#dc2626'}; font-weight:bold">${bal}৳</td>
+        </tr>`;
     });
     document.getElementById("summaryContent").innerHTML = html + "</tbody></table>";
 }
@@ -95,39 +89,38 @@ function renderCalendar(mList, monthYear) {
     let html = `<thead><tr><th>Day</th>${membersList.map(name => `<th>${name}</th>`).join('')}</tr></thead><tbody>`;
     for (let i = 1; i <= days; i++) {
         const dStr = `${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-        html += `<tr><td>${i}</td>${membersList.map(name => `<td>${mList.filter(x => x.date === dStr && x.member === name).length || '-'}</td>`).join('')}</tr>`;
+        html += `<tr><td>${i}</td>${membersList.map(name => {
+            const count = mList.filter(x => x.date === dStr && x.member === name).length;
+            return `<td>${count || '-'}</td>`;
+        }).join('')}</tr>`;
     }
     document.getElementById("mealCalendar").innerHTML = html + "</tbody>";
 }
 
-function renderPersonalStats(mList, bList) {
-    const name = emailToMember(currentUser.email);
-    const meals = mList.filter(m => m.member === name).length;
-    document.getElementById("personalStats").innerHTML = `<span>User: <strong>${name}</strong> | Your Meals: <strong>${meals}</strong></span>`;
-}
-
 function renderBazarList(bList) {
-    document.getElementById("bazarList").innerHTML = `<h3>Bazar Records</h3>` + bList.map(b => `
-        <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border)">
+    document.getElementById("bazarList").innerHTML = `<h3>Bazar Records</h3>` + bList.reverse().map(b => `
+        <div class="bazar-row">
             <span>${b.date} - <b>${b.member}</b> (${b.item})</span>
-            <b style="color:var(--success)">${b.price}৳</b>
+            <b class="text-success">${b.price}৳</b>
         </div>`).join('');
 }
 
-// --- INITIALIZATION ---
-function afterLogin() {
+function renderAdmin(meals, bazar) {
+    document.getElementById("adminMealTable").innerHTML = meals.slice(0,20).map(m => `
+        <tr><td>${m.date}</td><td>${m.member}</td><td><button onclick="del('meals','${m.id}')">❌</button></td></tr>`).join('');
+    document.getElementById("adminBazarTable").innerHTML = bazar.slice(0,20).map(b => `
+        <tr><td>${b.item}</td><td>${b.price}৳</td><td><button onclick="del('bazar','${b.id}')">❌</button></td></tr>`).join('');
+}
+
+window.del = async (t, id) => { if(confirm("Delete?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
+
+// --- AUTH & INIT ---
+async function afterLogin() {
     isAdmin = (currentUser.email === "admin@mess.com");
     document.getElementById("loginDiv").style.display = "none";
     document.getElementById("appDiv").style.display = "block";
-    
-    // Setup Dropdowns
-    document.querySelectorAll(".admin-only").forEach(el => el.style.display = isAdmin ? "block" : "none");
-    const mSelect = document.getElementById("mealMember");
-    const bSelect = document.getElementById("bazarMember");
-    const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${emailToMember(currentUser.email)}</option>`;
-    mSelect.innerHTML = bSelect.innerHTML = opt;
+    if(isAdmin) document.getElementById("adminTabBtn").style.display = "block";
 
-    // Month Selector (Last 2 Months)
     const vMonth = document.getElementById("viewMonth");
     vMonth.innerHTML = "";
     for(let i=0; i<2; i++) {
@@ -136,14 +129,10 @@ function afterLogin() {
         vMonth.innerHTML += `<option value="${val}">${d.toLocaleString('default',{month:'long',year:'numeric'})}</option>`;
     }
 
-    document.getElementById("mealDate").value = getToday();
-    document.getElementById("bazarDate").value = getToday();
+    const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'GUEST'}</option>`;
+    document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
+    
     fetchData();
-}
-
-function emailToMember(email) {
-    const map = {"shohan@mess.com":"SHOHAN","nabil@mess.com":"NABIL","tomal@mess.com":"TOMAL","abir@mess.com":"ABIR","masum@mess.com":"MASUM"};
-    return map[email] || "GUEST";
 }
 
 window.openTab = (n) => {
@@ -153,5 +142,10 @@ window.openTab = (n) => {
     event.currentTarget.classList.add("active");
 };
 
-document.getElementById("loginBtn").onclick = login;
+window.logout = () => supabase.auth.signOut().then(() => location.reload());
+document.getElementById("loginBtn").onclick = () => {
+    const e = document.getElementById("email").value;
+    const p = document.getElementById("password").value;
+    supabase.auth.signInWithPassword({ email: e, password: p });
+};
 supabase.auth.onAuthStateChange((ev, ses) => { if(ses) { currentUser = ses.user; afterLogin(); } });
