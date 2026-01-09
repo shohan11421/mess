@@ -1,7 +1,8 @@
 // ----------------- Supabase Config -----------------
 
 
-import { createClient } from '@supabase/supabase-js'
+//Import the client from an ESM-compatible CDN
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co'
 const supabaseKey = process.env.SUPABASE_KEY
 const supabase = createClient(supabaseUrl, supabaseKey)
@@ -261,4 +262,5 @@ async function fetchAdminData(){
 
 async function deleteMeal(id){ if(isAdmin) await supabase.from('meals').delete().eq('id',id); fetchData(); fetchAdminData(); }
 async function deleteBazar(id){ if(isAdmin) await supabase.from('bazar').delete().eq('id',id); fetchData(); fetchAdminData(); }
+
 
