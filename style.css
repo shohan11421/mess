@@ -1,0 +1,11 @@
+body { font-family: Arial; padding: 20px; background: #f2f2f2; }
+h1 { text-align: center; }
+.tabs { margin-bottom: 20px; text-align: center; }
+.tab-btn { padding: 10px 20px; margin: 0 5px; cursor: pointer; }
+.tab-btn.active { background: #007bff; color: white; border-radius: 5px; }
+.tab-content { background: #fff; padding: 15px; border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+table, th, td { border: 1px solid #ccc; }
+th, td { padding: 6px; text-align: center; }
+input, select, button { padding: 5px; margin: 5px 0; }
+button { cursor: pointer; }
