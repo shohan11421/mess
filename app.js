@@ -1,7 +1,6 @@
 // ----------------- Supabase Config -----------------
-const SUPABASE_URL = "https://xjzyujkuqtxywcabeiaf.supabase.co"; // your project URL
-const SUPABASE_ANON_KEY = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ"; // your public key
-
+const SUPABASE_URL = "https://xjzyujkuqtxywcabeiaf.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ";
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ----------------- Members -----------------
@@ -9,25 +8,50 @@ const membersList = ["SHOHAN","NABIL","TOMAL","ABIR","MASUM"];
 let currentUser = null;
 let isAdmin = false;
 
-// ----------------- Login -----------------
+// ----------------- Login / Signup -----------------
 async function login(){
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
   if(!email || !password){ alert("Enter email & password!"); return;}
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if(error){ document.getElementById("loginMsg").innerText = error.message; return; }
+  // Try login first
+  let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+  // If user does not exist, sign them up automatically
+  if(error && error.message.includes("Invalid login credentials")){
+    const { data: signupData, error: signupError } = await supabase.auth.signUp({ email, password });
+    if(signupError){
+      document.getElementById("loginMsg").innerText = signupError.message;
+      return;
+    }
+    alert("Account created! Please login again.");
+    return;
+  }
+
+  if(error){ 
+    document.getElementById("loginMsg").innerText = error.message; 
+    return; 
+  }
 
   currentUser = data.user;
+  afterLogin();
+}
+
+document.getElementById("loginBtn").onclick = login;
+
+// ----------------- After login setup -----------------
+function afterLogin(){
+  if(!currentUser) return;
+
   isAdmin = (currentUser.email === "admin@mess.com");
   document.getElementById("loginDiv").style.display="none";
   document.getElementById("appDiv").style.display="block";
   document.getElementById("adminTabBtn").style.display = isAdmin ? "inline-block" : "none";
+
   initMemberDropdowns();
   fetchData();
   if(isAdmin) fetchAdminData();
 }
-document.getElementById("loginBtn").onclick = login;
 
 // ----------------- Logout -----------------
 async function logout(){
@@ -41,13 +65,7 @@ async function logout(){
 supabase.auth.onAuthStateChange((event, session)=>{
   if(session){
     currentUser = session.user;
-    isAdmin = (currentUser.email === "admin@mess.com");
-    document.getElementById("loginDiv").style.display="none";
-    document.getElementById("appDiv").style.display="block";
-    document.getElementById("adminTabBtn").style.display = isAdmin ? "inline-block" : "none";
-    initMemberDropdowns();
-    fetchData();
-    if(isAdmin) fetchAdminData();
+    afterLogin();
   } else {
     document.getElementById("loginDiv").style.display="block";
     document.getElementById("appDiv").style.display="none";
@@ -55,6 +73,17 @@ supabase.auth.onAuthStateChange((event, session)=>{
 });
 
 // ----------------- Helpers -----------------
+function emailToMember(email){
+  switch(email){
+    case "shohan@mess.com": return "SHOHAN";
+    case "nabil@mess.com": return "NABIL";
+    case "tomal@mess.com": return "TOMAL";
+    case "abir@mess.com": return "ABIR";
+    case "masum@mess.com": return "MASUM";
+    default: return null;
+  }
+}
+
 function initMemberDropdowns(){
   const mealSelect = document.getElementById("mealMember");
   const bazarSelect = document.getElementById("bazarMember");
@@ -68,17 +97,6 @@ function initMemberDropdowns(){
     const m = emailToMember(currentUser.email);
     mealSelect.innerHTML = `<option value="${m}">${m}</option>`;
     bazarSelect.innerHTML = `<option value="${m}">${m}</option>`;
-  }
-}
-
-function emailToMember(email){
-  switch(email){
-    case "shohan@mess.com": return "SHOHAN";
-    case "nabil@mess.com": return "NABIL";
-    case "tomal@mess.com": return "TOMAL";
-    case "abir@mess.com": return "ABIR";
-    case "masum@mess.com": return "MASUM";
-    default: return null;
   }
 }
 
@@ -143,6 +161,7 @@ async function fetchData(){
   renderSummary(meals,bazar);
 }
 
+// ----------------- Render Functions -----------------
 function renderCalendar(mealsSnap){
   const today = new Date();
   const year = today.getFullYear();
