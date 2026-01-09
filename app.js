@@ -10,33 +10,20 @@ const membersList = ["SHOHAN","NABIL","TOMAL","ABIR","MASUM"];
 let currentUser = null;
 let isAdmin = false;
 
-// ----------------- Login Logic -----------------
+// ----------------- Updated Login Logic -----------------
 async function login() {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
     if(!email || !password) { alert("Enter email & password!"); return; }
 
+    // ONLY try login (removed the automatic signup block)
     let { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if(error && error.message.includes("Invalid login credentials")) {
-        const { data: signupData, error: signupError } = await supabase.auth.signUp({ email, password });
-        if(signupError) {
-            document.getElementById("loginMsg").innerText = signupError.message;
-            return;
-        }
-        alert("Account created! Please check your email or login again.");
-        return;
-    }
-
     if(error) { 
-        document.getElementById("loginMsg").innerText = error.message; 
+        // If login fails, just show the error message
+        document.getElementById("loginMsg").innerText = "Login failed: " + error.message; 
         return; 
     }
-}
-
-async function logout() {
-    await supabase.auth.signOut();
-    location.reload(); 
 }
 
 // ----------------- UI Management -----------------
@@ -223,3 +210,4 @@ supabase.auth.onAuthStateChange((event, session) => {
         document.getElementById("appDiv").style.display = "none";
     }
 });
+
