@@ -9,69 +9,89 @@
 </head>
 <body>
     <div class="container">
-        <div id="loginDiv" class="card" style="max-width: 400px; margin: 80px auto; text-align: center; display: none;">
-            <h2 style="margin-bottom: 20px;">Mess Login</h2>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <button id="loginBtn" class="btn-primary">Sign In</button>
+        <div id="loginDiv" class="card login-card" style="display: none;">
+            <h2>Mess Login</h2>
+            <div class="form-group">
+                <input type="email" id="email" placeholder="Email Address">
+                <input type="password" id="password" placeholder="Password">
+                <button id="loginBtn" class="btn-primary">Sign In</button>
+            </div>
         </div>
 
         <div id="appDiv" style="display:none">
             <header class="dashboard-header">
-                <h2 style="margin:0; font-size:1.1rem;">🏠 Mess Manager</h2>
+                <div id="personalStats">
+                    </div>
                 <button onclick="logout()" class="btn-danger">Logout</button>
             </header>
 
             <nav class="tabs">
-                <button class="tab-btn active" onclick="openTab('calendar')">Attendance</button>
-                <button class="tab-btn" onclick="openTab('bazar')">Bazar</button>
-                <button class="tab-btn" onclick="openTab('summary')">Summary</button>
-                <button id="adminTabBtn" class="tab-btn" style="display:none" onclick="openTab('admin')">Admin</button>
+                <button class="tab-btn active" onclick="openTab('calendar')">📅 Attendance</button>
+                <button class="tab-btn" onclick="openTab('bazar')">🛒 Bazar</button>
+                <button class="tab-btn" onclick="openTab('summary')">📊 Summary</button>
+                <button id="adminTabBtn" class="tab-btn" style="display:none" onclick="openTab('admin')">⚙️ Admin</button>
             </nav>
 
             <div id="calendar" class="tab-content">
                 <div class="card">
-                    <h3>Add Meal</h3>
-                    <select id="mealMember"></select>
-                    <input type="date" id="mealDate" class="admin-only" style="display:none">
-                    <input type="number" id="mealCount" value="1" min="1">
-                    <button onclick="addMeal()" class="btn-primary">Save Meal</button>
-                </div>
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                        <h3 style="margin:0">Log</h3>
-                        <select id="viewMonth" onchange="fetchData()" style="width:auto; margin:0"></select>
+                    <h3>Add Meal Record</h3>
+                    <div class="form-grid">
+                        <select id="mealMember"></select>
+                        <input type="date" id="mealDate" class="admin-only" style="display:none">
+                        <input type="number" id="mealCount" value="1" min="1">
+                        <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                     </div>
-                    <div style="overflow-x:auto"><table id="mealCalendar" class="pro-table"></table></div>
+                </div>
+
+                <div class="card">
+                    <div class="table-controls">
+                        <h3>Meal Log</h3>
+                        <select id="viewMonth" onchange="fetchData()" class="month-picker"></select>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="mealCalendar" class="pro-table"></table>
+                    </div>
                 </div>
             </div>
 
             <div id="bazar" class="tab-content" style="display:none">
                 <div class="card">
-                    <h3>Bazar Entry</h3>
-                    <select id="bazarMember"></select>
-                    <input type="date" id="bazarDate" class="admin-only" style="display:none">
-                    <input type="text" id="bazarItem" placeholder="Item">
-                    <input type="number" id="bazarPrice" placeholder="Price">
-                    <button onclick="addBazar()" class="btn-primary">Save Bazar</button>
+                    <h3>Add Bazar Expense</h3>
+                    <div class="form-grid">
+                        <select id="bazarMember"></select>
+                        <input type="date" id="bazarDate" class="admin-only" style="display:none">
+                        <input type="text" id="bazarItem" placeholder="What did you buy?">
+                        <input type="number" id="bazarPrice" placeholder="Price (৳)">
+                        <button onclick="addBazar()" class="btn-primary">Save Entry</button>
+                    </div>
                 </div>
-                <div id="bazarList" class="card"></div>
+                <div id="bazarList" class="card bazar-records">
+                    </div>
             </div>
 
             <div id="summary" class="tab-content" style="display:none">
-                <div id="summaryContent" class="card" style="padding:0"></div>
+                <div id="summaryContent" class="card summary-card">
+                    </div>
             </div>
 
             <div id="admin" class="tab-content" style="display:none">
                 <div class="card">
+                    <h3>System Management</h3>
                     <div class="admin-grid">
-                        <div><h4>Meals</h4><table class="pro-table"><tbody id="adminMealBody"></tbody></table></div>
-                        <div><h4>Bazar</h4><table class="pro-table"><tbody id="adminBazarBody"></tbody></table></div>
+                        <div>
+                            <h4>Recent Meals</h4>
+                            <table class="pro-table"><tbody id="adminMealBody"></tbody></table>
+                        </div>
+                        <div>
+                            <h4>Recent Bazar</h4>
+                            <table class="pro-table"><tbody id="adminBazarBody"></tbody></table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
     <script type="module" src="app.js"></script>
 </body>
 </html>
