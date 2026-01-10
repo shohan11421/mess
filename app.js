@@ -37,23 +37,33 @@ window.addBazar = async () => {
 };
 
 async function fetchData() {
-    const monthVal = document.getElementById("viewMonth").value; // e.g. "2025-12"
+    const monthVal = document.getElementById("viewMonth").value; // e.g., "2026-01"
     const [year, mon] = monthVal.split('-').map(Number);
-    const lastDay = new Date(year, mon, 0).getDate();
-
-    // STRICT FILTERING: Ensures only the selected month's data is retrieved
-    const startDate = `${monthVal}-01`;
-    const endDate = `${monthVal}-${lastDay}`;
-
-    const { data: meals } = await supabase.from('meals').select('*').gte('date', startDate).lte('date', endDate);
-    const { data: bazar } = await supabase.from('bazar').select('*').gte('date', startDate).lte('date', endDate);
     
+    // Get the first and last day of the selected month
+    const firstDay = `${monthVal}-01`;
+    const lastDayDate = new Date(year, mon, 0).getDate();
+    const lastDay = `${monthVal}-${String(lastDayDate).padStart(2, '0')}`;
+
+    // STRICT FILTERING: Only get data between firstDay and lastDay
+    const { data: meals, error: mErr } = await supabase.from('meals')
+        .select('*')
+        .gte('date', firstDay)
+        .lte('date', lastDay);
+        
+    const { data: bazar, error: bErr } = await supabase.from('bazar')
+        .select('*')
+        .gte('date', firstDay)
+        .lte('date', lastDay);
+
+    if (mErr || bErr) return console.error("Fetch Error:", mErr || bErr);
+    
+    // Clear and Redraw everything for the specific month
     renderCalendar(meals || [], monthVal);
     renderSummary(meals || [], bazar || []);
     renderBazarList(bazar || []);
     if(isAdmin) renderAdmin(meals || [], bazar || []);
 }
-
 // --- UI RENDERING ---
 function renderSummary(mList, bList) {
     const totalBazar = bList.reduce((s, b) => s + b.price, 0);
@@ -157,3 +167,4 @@ document.getElementById("loginBtn").onclick = () => {
     supabase.auth.signInWithPassword({ email: e, password: p });
 };
 supabase.auth.onAuthStateChange((ev, ses) => { if(ses) { currentUser = ses.user; afterLogin(); } });
+
