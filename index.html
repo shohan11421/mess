@@ -1,88 +1,34 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mess Manager Pro</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <div id="loginDiv" class="card login-card">
-            <h2>🏠 Mess Manager</h2>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <button id="loginBtn" class="btn btn-primary">Login</button>
-            <p id="loginMsg" class="error-text"></p>
+<div id="appDiv" style="display:none">
+    <header class="dashboard-header">
+        <div id="personalStats"></div>
+        <button onclick="logout()" class="btn btn-danger btn-sm">Logout</button>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="openTab('calendar')">📅 Attendance</button>
+        <button class="tab-btn" onclick="openTab('bazar')">🛒 Bazar</button>
+        <button class="tab-btn" onclick="openTab('summary')">📊 Summary</button>
+    </nav>
+
+    <div id="calendar" class="tab-content">
+        <div class="card entry-form">
+            <h3>Add Meal Record</h3>
+            <div class="form-grid">
+                <select id="mealMember"></select>
+                <input type="date" id="mealDate" class="admin-only" style="display:none">
+                <input type="number" id="mealCount" value="1" min="1" placeholder="Meals">
+                <button onclick="addMeal()" class="btn btn-primary">Save Meal</button>
+            </div>
         </div>
-
-        <div id="appDiv" style="display:none">
-            <header class="dashboard-header">
-                <div id="personalStats"></div>
-                <button onclick="logout()" class="btn btn-danger btn-sm">Logout</button>
-            </header>
-
-            <nav class="tabs">
-                <button class="tab-btn active" onclick="openTab('calendar')">📅 Attendance</button>
-                <button class="tab-btn" onclick="openTab('bazar')">🛒 Bazar</button>
-                <button class="tab-btn" onclick="openTab('summary')">📊 Summary</button>
-                <button id="adminTabBtn" class="tab-btn" style="display:none" onclick="openTab('admin')">🛠 Admin</button>
-            </nav>
-
-            <div id="calendar" class="tab-content">
-                <div class="card entry-form">
-                    <h3>Add Meal Record</h3>
-                    <div class="form-grid">
-                        <select id="mealMember"></select>
-                        <input type="date" id="mealDate" class="admin-only" style="display:none">
-                        <input type="number" id="mealCount" value="1" min="1">
-                        <button onclick="addMeal()" class="btn btn-primary">Save Meal</button>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="table-header">
-                        <h3>Meal Attendance</h3>
-                        <select id="viewMonth" onchange="fetchData()"></select>
-                    </div>
-                    <div class="table-container">
-                        <table id="mealCalendar" class="pro-table"></table>
-                    </div>
-                </div>
+        <div class="card">
+            <div class="table-header">
+                <h3>Meal Attendance</h3>
+                <select id="viewMonth" onchange="fetchData()"></select>
             </div>
-
-            <div id="bazar" class="tab-content" style="display:none">
-                <div class="card entry-form">
-                    <h3>Add Bazar Expense</h3>
-                    <div class="form-grid">
-                        <select id="bazarMember"></select>
-                        <input type="date" id="bazarDate" class="admin-only" style="display:none">
-                        <input type="text" id="bazarItem" placeholder="What did you buy?">
-                        <input type="number" id="bazarPrice" placeholder="Cost (৳)">
-                        <button onclick="addBazar()" class="btn btn-success">Save Entry</button>
-                    </div>
-                </div>
-                <div id="bazarList" class="card list-view"></div>
-            </div>
-
-            <div id="summary" class="tab-content" style="display:none">
-                <div id="summaryContent" class="card no-padding"></div>
-            </div>
-
-            <div id="admin" class="tab-content" style="display:none">
-                <div class="admin-grid">
-                    <div class="card">
-                        <h4>Manage Meals</h4>
-                        <div class="small-table"><table class="pro-table" id="adminMealTable"></table></div>
-                    </div>
-                    <div class="card">
-                        <h4>Manage Bazar</h4>
-                        <div class="small-table"><table class="pro-table" id="adminBazarTable"></table></div>
-                    </div>
-                </div>
+            <div class="table-container">
+                <table id="mealCalendar" class="pro-table"></table>
             </div>
         </div>
     </div>
-    <script type="module" src="app.js"></script>
-</body>
-</html>
+    
+    </div>
