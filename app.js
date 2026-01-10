@@ -14,44 +14,68 @@ const getToday = () => new Date().toLocaleDateString('en-CA');
 window.addMeal = async () => {
     const member = document.getElementById("mealMember").value;
     const count = parseInt(document.getElementById("mealCount").value);
-    const date = isAdmin ? document.getElementById("mealDate").value : getToday();
+    
+    // Admin Override: Use date picker. Regular User: Use Today.
+    let date = isAdmin ? document.getElementById("mealDate").value : getToday();
+    
+    if (!date) return alert("Please select a valid date");
 
     const entries = Array.from({length: count}, () => ({ member, date, added_by: currentUser.id }));
-    await supabase.from('meals').insert(entries);
+    const { error } = await supabase.from('meals').insert(entries);
     
-    document.getElementById("mealCount").value = 1; // Reset
-    fetchData();
+    if(error) alert("Error saving meal: " + error.message);
+    else {
+        document.getElementById("mealCount").value = 1;
+        fetchData(); // Refresh all views
+    }
 };
 
 window.addBazar = async () => {
     const member = document.getElementById("bazarMember").value;
     const item = document.getElementById("bazarItem").value;
     const price = Number(document.getElementById("bazarPrice").value);
-    const date = isAdmin ? document.getElementById("bazarDate").value : getToday();
-
-    if(!item || !price) return alert("Fill all fields");
-
-    await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]);
     
-    // Privacy Fix: Clear inputs after saving
-    document.getElementById("bazarItem").value = "";
-    document.getElementById("bazarPrice").value = "";
+    // Admin Override: Use date picker. Regular User: Use Today.
+    let date = isAdmin ? document.getElementById("bazarDate").value : getToday();
+
+    if(!item || !price || !date) return alert("Please fill all fields correctly");
+
+    const { error } = await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]);
     
-    fetchData();
+    if(error) alert("Error saving bazar: " + error.message);
+    else {
+        document.getElementById("bazarItem").value = "";
+        document.getElementById("bazarPrice").value = "";
+        fetchData();
+    }
 };
 
 async function fetchData() {
-    const month = document.getElementById("viewMonth").value;
-    const { data: meals } = await supabase.from('meals').select('*').gte('date', `${month}-01`).lte('date', `${month}-31`);
-    const { data: bazar } = await supabase.from('bazar').select('*').gte('date', `${month}-01`).lte('date', `${month}-31`);
+    const monthVal = document.getElementById("viewMonth").value; // e.g., "2026-01"
     
-    renderCalendar(meals || [], month);
+    const year = parseInt(monthVal.split('-')[0]);
+    const mon = parseInt(monthVal.split('-')[1]);
+    const lastDay = new Date(year, mon, 0).getDate();
+
+    // Strict fetch within selected month boundaries
+    const { data: meals } = await supabase.from('meals')
+        .select('*')
+        .gte('date', `${monthVal}-01`)
+        .lte('date', `${monthVal}-${lastDay}`);
+        
+    const { data: bazar } = await supabase.from('bazar')
+        .select('*')
+        .gte('date', `${monthVal}-01`)
+        .lte('date', `${monthVal}-${lastDay}`);
+    
+    // Render all components with strict current data
+    renderCalendar(meals || [], monthVal);
     renderSummary(meals || [], bazar || []);
     renderBazarList(bazar || []);
     if(isAdmin) renderAdmin(meals || [], bazar || []);
 }
 
-// --- RENDERING ---
+// --- UI RENDERING ---
 function renderSummary(mList, bList) {
     const totalBazar = bList.reduce((s, b) => s + b.price, 0);
     const totalMeals = mList.length;
@@ -106,29 +130,47 @@ function renderBazarList(bList) {
 }
 
 function renderAdmin(meals, bazar) {
-    document.getElementById("adminMealTable").innerHTML = meals.slice(0,20).map(m => `
-        <tr><td>${m.date}</td><td>${m.member}</td><td><button onclick="del('meals','${m.id}')">❌</button></td></tr>`).join('');
-    document.getElementById("adminBazarTable").innerHTML = bazar.slice(0,20).map(b => `
-        <tr><td>${b.item}</td><td>${b.price}৳</td><td><button onclick="del('bazar','${b.id}')">❌</button></td></tr>`).join('');
+    const mTable = document.getElementById("adminMealTable");
+    const bTable = document.getElementById("adminBazarTable");
+    
+    mTable.innerHTML = `<tr><th>Date</th><th>Member</th><th>Action</th></tr>` + meals.map(m => `
+        <tr><td>${m.date}</td><td>${m.member}</td><td><button class="btn-del" onclick="del('meals','${m.id}')">Delete</button></td></tr>`).join('');
+    
+    bTable.innerHTML = `<tr><th>Item</th><th>Price</th><th>Action</th></tr>` + bazar.map(b => `
+        <tr><td>${b.item}</td><td>${b.price}৳</td><td><button class="btn-del" onclick="del('bazar','${b.id}')">Delete</button></td></tr>`).join('');
 }
 
-window.del = async (t, id) => { if(confirm("Delete?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
+window.del = async (t, id) => { 
+    if(confirm("Confirm deletion?")) { 
+        await supabase.from(t).delete().eq('id', id); 
+        fetchData(); 
+    }
+};
 
-// --- AUTH & INIT ---
+// --- INITIALIZATION ---
 async function afterLogin() {
     isAdmin = (currentUser.email === "admin@mess.com");
     document.getElementById("loginDiv").style.display = "none";
     document.getElementById("appDiv").style.display = "block";
-    if(isAdmin) document.getElementById("adminTabBtn").style.display = "block";
+    
+    if(isAdmin) {
+        document.getElementById("adminTabBtn").style.display = "block";
+        document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block");
+    }
 
+    // Initialize Month Selector for everyone (Last month and Current month)
     const vMonth = document.getElementById("viewMonth");
     vMonth.innerHTML = "";
     for(let i=0; i<2; i++) {
         let d = new Date(); d.setMonth(d.getMonth() - i);
         let val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        vMonth.innerHTML += `<option value="${val}">${d.toLocaleString('default',{month:'long',year:'numeric'})}</option>`;
+        vMonth.innerHTML += `<option value="${val}" ${i===0 ? 'selected' : ''}>${d.toLocaleString('default',{month:'long',year:'numeric'})}</option>`;
     }
 
+    document.getElementById("mealDate").value = getToday();
+    document.getElementById("bazarDate").value = getToday();
+
+    // Admin can add for anyone; Users can only add for themselves
     const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'GUEST'}</option>`;
     document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
     
