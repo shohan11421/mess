@@ -29,3 +29,42 @@ input, select { padding: 10px; border: 1px solid var(--border); border-radius: 8
 .btn-del { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
 
 #viewMonth { border: 2px solid var(--accent); color: var(--accent); font-weight: bold; }
+
+/* Professional Calendar Styling */
+#mealCalendar {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background: white;
+}
+
+#mealCalendar th {
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 12px 8px;
+    border-bottom: 2px solid #e2e8f0;
+    text-align: center;
+}
+
+#mealCalendar td {
+    padding: 10px 8px;
+    text-align: center;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+    color: #1e293b;
+}
+
+#mealCalendar tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Highlight the Day column */
+#mealCalendar td:first-child {
+    font-weight: bold;
+    color: #64748b;
+    background: #f8fafc;
+    width: 50px;
+}
+
