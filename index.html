@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Engineers_Hub Mess Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <div id="loginDiv" class="card login-card" style="display:none; max-width:400px; margin: 80px auto;">
-            <h2 style="text-align:center">Mess Login</h2>
+        <div id="loginDiv" class="card" style="display:none; max-width:400px; margin: 50px auto; text-align: center;">
+            <h2>Mess Login</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button id="loginBtn" class="btn-primary">Sign In</button>
@@ -30,76 +30,64 @@
             </nav>
 
             <div id="calendar" class="tab-content">
-                <div class="card">
+                <div class="card compact-form">
                     <h3>Add Meal</h3>
-                    <select id="mealMember"></select>
                     <div class="input-group">
-                        <select id="mealDateType" onchange="toggleAdminDate()">
-                            <option value="today">Today</option>
-                            <option value="tomorrow">Tomorrow</option>
-                            <option value="custom" class="admin-only" style="display:none">Custom Date</option>
-                        </select>
+                        <select id="mealMember"></select>
                         <input type="number" id="mealCount" value="1" min="1">
                     </div>
-                    <input type="date" id="mealDate" class="admin-only" style="display:none; margin-bottom:12px;">
+                    <select id="mealDateType" onchange="toggleAdminDate()">
+                        <option value="today">Today</option>
+                        <option value="tomorrow">Tomorrow</option>
+                        <option value="custom" class="admin-only" style="display:none">Custom Date</option>
+                    </select>
+                    <input type="date" id="mealDate" class="admin-only" style="display:none;">
                     <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                 </div>
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+                
+                <div class="card no-padding">
+                    <div class="card-header-inline">
                         <h3>Meal Log</h3>
-                        <select id="viewMonth" onchange="fetchData()" class="month-picker" style="width:auto;"></select>
+                        <select id="viewMonth" onchange="fetchData()" class="month-picker"></select>
                     </div>
-                    <div style="overflow-x:auto"><table id="mealCalendar" class="pro-table"></table></div>
+                    <div class="table-container">
+                        <table id="mealCalendar" class="pro-table"></table>
+                    </div>
                 </div>
             </div>
 
             <div id="bazar" class="tab-content" style="display:none">
-                <div class="card">
+                <div class="card compact-form">
                     <h3>Add Expense</h3>
                     <select id="bazarMember"></select>
                     <div class="input-group">
-                        <input type="text" id="bazarItem" placeholder="Item name">
+                        <input type="text" id="bazarItem" placeholder="Item">
                         <input type="number" id="bazarPrice" placeholder="Price">
                     </div>
-                    <select id="bazarDateType" class="admin-only" style="display:none; margin-bottom:12px;" onchange="toggleBazarAdminDate()">
-                        <option value="today">Today</option>
-                        <option value="custom">Custom Date</option>
-                    </select>
-                    <input type="date" id="bazarDate" class="admin-only" style="display:none; margin-bottom:12px;">
                     <button onclick="addBazar()" class="btn-primary">Save Entry</button>
                 </div>
-                <div class="admin-layout">
-                    <aside class="admin-sidebar">
-                        <h4>Members</h4>
-                        <div id="bazarMemberNav" class="member-nav"></div>
-                        <button onclick="filterBazarByMember('ALL')" class="btn-all-list">All List</button>
-                    </aside>
-                    <main class="admin-main">
-                        <div class="admin-data-header"><h3 id="bazarCurrentViewTitle">Expense List</h3></div>
-                        <div class="card" style="padding:10px;"><div id="bazarListContent" class="admin-scroll"></div></div>
-                    </main>
-                </div>
+                <div id="bazarListContent"></div>
             </div>
 
             <div id="summary" class="tab-content" style="display:none">
                 <div id="summaryContent"></div>
                 
-                <div id="finalSettlementWrapper" style="display:none; margin-top: 30px;">
-                    <div class="admin-data-header" style="background: #059669; border-radius: 12px 12px 0 0;">
-                        <h3 style="color: white; margin: 0;">Final Monthly Settlement</h3>
+                <div id="finalSettlementWrapper" style="display:none; margin-top: 20px;">
+                    <div class="summary-black-card" style="background: var(--success);">
+                        <p>Final Monthly Bill Settlement</p>
                     </div>
-                    <div class="table-container" style="border: 2px solid #059669; border-top: none; background: white; overflow-x: auto;">
-                        <table class="summary-table" style="min-width: 800px;">
+                    <div class="table-container">
+                        <table class="summary-table">
                             <thead>
                                 <tr>
-                                    <th style="text-align:left; padding-left:15px;">MEMBER</th>
-                                    <th>MEAL BAL</th>
-                                    <th>RENT</th>
-                                    <th>WIFI</th>
-                                    <th>GAS</th>
-                                    <th>ELECT</th>
-                                    <th>KHALA</th>
-                                    <th>FINAL PAY</th>
+                                    <th class="name-cell">Member</th>
+                                    <th>Meal Bal</th>
+                                    <th>Rent</th>
+                                    <th>Wifi</th>
+                                    <th>Gas</th>
+                                    <th>Elect</th>
+                                    <th>Khala</th>
+                                    <th>Payable</th>
                                 </tr>
                             </thead>
                             <tbody id="finalSettlementBody"></tbody>
@@ -109,31 +97,14 @@
             </div>
 
             <div id="admin" class="tab-content" style="display:none">
-                <div class="admin-layout">
-                    <aside class="admin-sidebar">
-                        <h4>Manage</h4>
-                        <div id="adminMemberList" class="member-nav"></div>
-                        <div style="margin-top:20px;">
-                            <h4>Publication</h4>
-                            <button id="publishBtn" onclick="toggleSettlement()" class="btn-all-list" style="background: #fff7ed; border:1px solid #f59e0b; color:#b45309;">
-                                Show Settlement: OFF
-                            </button>
-                        </div>
-                    </aside>
-                    <main class="admin-main">
-                        <div class="admin-data-header"><h3 id="adminCurrentTitle">Select Member</h3></div>
-                        <div class="admin-grid-view">
-                            <div class="card admin-card">
-                                <div class="card-header"><h4>Meal Records</h4></div>
-                                <div id="adminMealBody" class="admin-scroll"></div>
-                            </div>
-                            <div class="card admin-card">
-                                <div class="card-header"><h4>Bazar Records</h4></div>
-                                <div id="adminBazarBody" class="admin-scroll"></div>
-                            </div>
-                        </div>
-                    </main>
+                <div class="card">
+                    <h3>Admin Controls</h3>
+                    <button id="publishBtn" onclick="toggleSettlement()" class="btn-pub-off">
+                        Statement: HIDDEN
+                    </button>
+                    <div id="adminMemberList" class="member-nav" style="margin-top:15px;"></div>
                 </div>
+                <div id="adminData"></div>
             </div>
         </div>
     </div>
