@@ -46,7 +46,7 @@
                     <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                 </div>
                 <div class="card">
-                    <div class="flex-between" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
                         <h3>Meal Log</h3>
                         <select id="viewMonth" onchange="fetchData()" class="month-picker"></select>
                     </div>
@@ -67,7 +67,6 @@
                         <option value="custom">Custom Date</option>
                     </select>
                     <input type="date" id="bazarDate" class="admin-only" style="display:none; margin-bottom:12px;">
-                    
                     <button onclick="addBazar()" class="btn-primary">Save Entry</button>
                 </div>
 
@@ -90,12 +89,14 @@
 
             <div id="billsTab" class="tab-content" style="display:none">
                 <div class="card">
-                    <div class="admin-data-header">
-                        <h3 style="margin:0">Individual Bill Calculator</h3>
-                        <p style="font-size:11px; margin:5px 0 0 0; opacity:0.8;">Enter individual costs. Meal balance (Paid - Cost) is auto-deducted.</p>
-                    </div>
-                    <div id="billsContent" class="table-container" style="overflow-x: auto;">
+                    <div class="admin-data-header" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h3 style="margin:0">Bill Calculator</h3>
+                            <p style="font-size:11px; margin:5px 0 0 0; opacity:0.8;">Utility costs - Meal Balance.</p>
                         </div>
+                        <button onclick="saveMonthlyBills()" class="btn-primary" style="width:auto; padding:8px 15px; background:#10b981">Save All</button>
+                    </div>
+                    <div id="billsContent" class="table-container" style="overflow-x: auto;"></div>
                     <button onclick="window.print()" class="btn-primary" style="margin-top:15px; background:#64748b">Print / Save PDF</button>
                 </div>
             </div>
@@ -110,11 +111,11 @@
                         <div class="admin-data-header"><h3 id="adminCurrentTitle">Select Member</h3></div>
                         <div class="admin-grid-view">
                             <div class="card admin-card">
-                                <div class="card-header"><h4>Meal Records</h4></div>
+                                <h4>Meal Records</h4>
                                 <div class="admin-scroll"><table class="pro-table mini-table"><tbody id="adminMealBody"></tbody></table></div>
                             </div>
                             <div class="card admin-card">
-                                <div class="card-header"><h4>Bazar Records</h4></div>
+                                <h4>Bazar Records</h4>
                                 <div class="admin-scroll"><table class="pro-table mini-table"><tbody id="adminBazarBody"></tbody></table></div>
                             </div>
                         </div>
