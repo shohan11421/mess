@@ -1,4 +1,4 @@
-/* --- THEME VARIABLES --- */
+/* --- THEME & RESET --- */
 :root { 
     --bg: #f8fafc; 
     --primary: #1e293b; 
@@ -10,7 +10,6 @@
     --danger: #ef4444;
 }
 
-/* --- BASE STYLES --- */
 body { 
     font-family: 'Inter', sans-serif; 
     background: var(--bg); 
@@ -20,10 +19,7 @@ body {
     line-height: 1.5;
 }
 
-.container { 
-    max-width: 1000px; /* Slightly wider for better desktop view */
-    margin: 0 auto; 
-}
+.container { max-width: 1000px; margin: 0 auto; }
 
 /* --- CARDS & HEADERS --- */
 .card { 
@@ -46,7 +42,7 @@ body {
     border: 1px solid var(--border); 
 }
 
-/* --- NAVIGATION TABS --- */
+/* --- NAVIGATION --- */
 .tabs { 
     display: flex; 
     gap: 5px; 
@@ -54,256 +50,76 @@ body {
     padding: 5px; 
     border-radius: 12px; 
     margin-bottom: 20px; 
-    overflow-x: auto; /* Critical for mobile */
-    scrollbar-width: none; /* Hide scrollbar Firefox */
+    overflow-x: auto;
+    scrollbar-width: none;
 }
-
-.tabs::-webkit-scrollbar { display: none; } /* Hide scrollbar Chrome/Safari */
+.tabs::-webkit-scrollbar { display: none; }
 
 .tab-btn { 
-    flex: 1; 
-    padding: 12px 15px; 
-    border: none; 
-    border-radius: 8px; 
-    cursor: pointer; 
-    color: var(--text-muted); 
-    font-weight: 600; 
-    background: transparent; 
-    white-space: nowrap; 
-    transition: all 0.2s ease;
+    flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; 
+    color: var(--text-muted); font-weight: 600; background: transparent; 
+    white-space: nowrap; transition: 0.2s;
+}
+.tab-btn.active { background: white; color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
+/* --- TABLES (PROFESSIONAL & RESPONSIVE) --- */
+.pro-table, .summary-table { width: 100%; border-collapse: collapse; }
+
+/* The "No-Slide" Meal Log Logic */
+#mealCalendar {
+    table-layout: fixed;
+    width: 100%;
 }
 
-.tab-btn.active { 
-    background: white; 
-    color: var(--accent); 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-}
-
-/* --- FORM ELEMENTS --- */
-input, select { 
-    width: 100%; 
-    padding: 12px; 
-    margin-bottom: 10px; 
-    border: 1px solid var(--border); 
-    border-radius: 8px; 
-    box-sizing: border-box; 
-    font-size: 14px;
-    background-color: #ffffff;
-}
-
-.input-group { 
-    display: flex; 
-    gap: 10px; 
-    margin-bottom: 10px; 
-    align-items: center; 
-}
-
-.input-group div { width: 100%; }
-.input-group input, .input-group select { margin-bottom: 0; }
-
-/* --- PROFESSIONAL TABLES --- */
-.pro-table, .summary-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-}
-
-/* Specific Alignment for Meal Log */
 #mealCalendar th, #mealCalendar td {
-    padding: 12px 8px;
+    padding: 10px 2px;
     text-align: center;
     border-bottom: 1px solid #f1f5f9;
-    min-width: 85px; /* Ensures names don't wrap awkwardly */
+    font-size: 11px;
+    word-wrap: break-word;
 }
 
 #mealCalendar th {
-    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--text-muted);
     font-weight: 700;
 }
 
-#mealCalendar td:first-child, #mealCalendar th:first-child {
-    min-width: 40px;
-    position: sticky; /* Keeps "Day" visible while scrolling names */
-    left: 0;
-    background: white;
-    font-weight: bold;
-    z-index: 1;
-}
+/* Day Column */
+#mealCalendar th:first-child, #mealCalendar td:first-child { width: 30px; font-weight: bold; }
 
-/* Summary Table Styling */
-.summary-table th { 
-    padding: 12px 5px; 
-    font-size: 10px; 
-    color: #94a3b8; 
-    text-transform: uppercase; 
-    border-bottom: 1px solid #f1f5f9; 
-}
+/* Summary & Bills Table */
+.summary-table th { padding: 12px 5px; font-size: 10px; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; }
+.summary-table td { padding: 12px 5px; text-align: center; font-size: 12px; border-bottom: 1px solid #f8fafc; }
 
-.summary-table td { 
-    padding: 12px 5px; 
-    text-align: center; 
-    font-size: 13px; 
-    border-bottom: 1px solid #f8fafc; 
-}
+.name-cell { font-weight: 800; color: var(--primary); text-align: left !important; padding-left: 10px !important; }
 
-.name-cell { 
-    font-weight: 800; 
-    color: var(--primary); 
-    text-align: left !important; 
-    padding-left: 15px !important; 
-}
+/* --- INPUTS --- */
+input, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+.input-group { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+.mini-input { padding: 4px !important; font-size: 11px !important; height: 28px; text-align: center; }
 
 /* --- BUTTONS --- */
-.btn-primary { 
-    background: var(--primary); 
-    color: white; 
-    border: none; 
-    padding: 14px; 
-    border-radius: 8px; 
-    width: 100%; 
-    cursor: pointer; 
-    font-weight: 700; 
-    transition: opacity 0.2s;
-}
+.btn-primary { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 700; }
+.btn-logout { background: var(--danger); color: white; border: none; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 11px; }
 
-.btn-primary:hover { opacity: 0.9; }
-
-.btn-logout { 
-    background: var(--danger); 
-    color: white; 
-    border: none; 
-    padding: 6px 14px; 
-    border-radius: 20px; 
-    cursor: pointer; 
-    font-size: 11px; 
-    font-weight: 600;
-}
-
-/* --- BAZAR LIST --- */
-.bazar-row { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center;
-    padding: 14px; 
-    border-bottom: 1px solid #f1f5f9; 
-}
-
-.bazar-info b { font-size: 14px; color: var(--primary); }
-.bazar-info small { color: var(--text-muted); font-size: 11px; }
-
-/* --- MOBILE & RESPONSIVE --- */
+/* --- MOBILE SPECIFIC FIXES --- */
 @media (max-width: 600px) {
-    body { padding: 5px; }
+    .dashboard-header { flex-direction: column; gap: 10px; text-align: center; }
     
-    .dashboard-header {
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
-    }
-
-    .card { padding: 15px; border-radius: 8px; }
-
-    /* Make large tables scrollable sideways on tiny screens */
-    .table-container, #mealCalendar {
-        display: block;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+    /* Force tables to fit width without scrolling */
+    .summary-table { table-layout: fixed; width: 100%; }
+    
+    .name-cell { width: 50px !important; font-size: 10px !important; padding-left: 5px !important; }
+    
+    /* Bazar Tab Sidebar to Horizontal Nav */
+    .admin-layout { display: flex; flex-direction: column; }
+    .member-nav { display: flex; overflow-x: auto; gap: 5px; margin-bottom: 10px; padding: 5px 0; }
+    .member-nav button { flex: 0 0 auto; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: white; }
+    .member-nav button.active { background: var(--accent); color: white; border-color: var(--accent); }
 }
 
 @media print {
     .tabs, .dashboard-header, .btn-primary, .admin-sidebar, .month-picker { display: none !important; }
     .card { border: none; padding: 0; }
-    body { background: white; }
-}
-
-/* FORCE ALL NAMES TO FIT ON ONE PAGE (MOBILE) */
-@media (max-width: 600px) {
-    /* Reduce container padding to gain side space */
-    body { padding: 5px; }
-    .card { padding: 10px; }
-
-    /* Shrink the Meal Log table to fit the screen width */
-    #mealCalendar {
-        display: table !important; /* Disables the sliding behavior */
-        table-layout: fixed;      /* Forces columns to stay within screen */
-        width: 100% !important;
-        min-width: unset !important;
-    }
-
-    #mealCalendar th, 
-    #mealCalendar td {
-        min-width: unset !important; /* Removes the 85px restriction */
-        padding: 8px 2px !important; /* Tightens the horizontal space */
-        font-size: 10px !important;  /* Smaller text to fit full names */
-        word-wrap: break-word;       /* Allows names to wrap to a second line */
-        white-space: normal !important; 
-    }
-
-    /* Keep the 'Day' column very slim */
-    #mealCalendar th:first-child, 
-    #mealCalendar td:first-child {
-        width: 25px !important;
-        position: static !important; /* Remove sticky so it doesn't overlap */
-    }
-}
-
-/*Delete from here if things changes*/
-
-
-/* --- GLOBAL TABLE FIXES FOR MOBILE (Add to the bottom of your CSS) --- */
-@media (max-width: 600px) {
-    /* 1. Summary & Bills Table Fix */
-    .summary-table {
-        min-width: unset !important; /* Removes the 600px minimum */
-        width: 100% !important;
-        table-layout: fixed;        /* Forces it to stay within screen */
-    }
-
-    .summary-table th, 
-    .summary-table td {
-        padding: 8px 2px !important;
-        font-size: 10px !important;
-        word-wrap: break-word;
-    }
-
-    /* 2. Personal Bills Input Fix */
-    /* This stops the input boxes from pushing the table too wide */
-    .mini-input {
-        width: 100% !important;
-        padding: 4px !important;
-        font-size: 10px !important;
-        margin: 0 !important;
-        height: 25px;
-    }
-
-    /* 3. Name Cell Alignment */
-    /* Ensures member names in Summary/Bills don't take too much room */
-    .name-cell {
-        padding-left: 5px !important;
-        width: 60px !important;
-        font-size: 10px !important;
-    }
-
-    /* 4. Bazar Tab Optimization */
-    /* Makes sure the Bazar list looks clean on narrow screens */
-    .admin-layout {
-        display: flex;
-        flex-direction: column; /* Stack sidebar on top of list for mobile */
-    }
-
-    .member-nav {
-        display: flex;
-        overflow-x: auto;
-        gap: 5px;
-        margin-bottom: 10px;
-        padding-bottom: 5px;
-    }
-
-    .member-nav button {
-        flex: 0 0 auto; /* Keeps buttons from shrinking */
-        padding: 8px 12px;
-    }
 }
