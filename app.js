@@ -17,16 +17,29 @@ window.fetchData = async () => {
     const [year, mon] = monthVal.split('-').map(Number);
     const firstDay = `${monthVal}-01`, lastDay = `${monthVal}-${new Date(year, mon, 0).getDate()}`;
 
-    const { data: meals } = await supabase.from('meals').select('*').gte('date', firstDay).lte('date', lastDay);
-    const { data: bazar } = await supabase.from('bazar').select('*').gte('date', firstDay).lte('date', lastDay);
-    const { data: savedBills } = await supabase.from('monthly_bills').select('*').eq('month', monthVal);
+    // Parallel Data Fetching
+    const [mealsRes, bazarRes, billsRes, scheduleRes] = await Promise.all([
+        supabase.from('meals').select('*').gte('date', firstDay).lte('date', lastDay),
+        supabase.from('bazar').select('*').gte('date', firstDay).lte('date', lastDay),
+        supabase.from('monthly_bills').select('*').eq('month', monthVal),
+        supabase.from('bazar_schedule').select('*').order('date', { ascending: true })
+    ]);
+
+    const meals = mealsRes.data || [];
+    const bazar = bazarRes.data || [];
+    const savedBills = billsRes.data || [];
+    const schedule = scheduleRes.data || [];
+
+    // Render UI Components
+    renderPersonalStats(meals);
+    renderCalendar(meals, monthVal);
+    renderSummary(meals, bazar);
+    renderBazarList(bazar);
+    renderBillsTab(meals, bazar, savedBills);
+    renderBazarSchedule(schedule);
+    updateDailyNotification(schedule);
     
-    renderPersonalStats(meals || []);
-    renderCalendar(meals || [], monthVal);
-    renderSummary(meals || [], bazar || []);
-    renderBazarList(bazar || []);
-    renderBillsTab(meals || [], bazar || [], savedBills || []);
-    if(isAdmin) renderAdmin(meals || [], bazar || []);
+    if(isAdmin) renderAdmin(meals, bazar);
 };
 
 // --- CORE ACTIONS ---
@@ -35,12 +48,7 @@ window.addMeal = async () => {
     const count = parseInt(document.getElementById("mealCount").value);
     const dateInput = document.getElementById("mealDateSource");
     
-    let date;
-    if (isAdmin) {
-        date = dateInput.value; // It's a calendar for Admin
-    } else {
-        date = (dateInput.value === "today") ? getToday() : getTomorrow(); // It's a dropdown for User
-    }
+    let date = isAdmin ? dateInput.value : (dateInput.value === "today" ? getToday() : getTomorrow());
 
     if(!date) return alert("Select Date");
     await supabase.from('meals').insert(Array.from({length: count}, () => ({ member, date, added_by: currentUser.id })));
@@ -53,7 +61,7 @@ window.addBazar = async () => {
     const member = document.getElementById("bazarMember").value;
     const dateInput = document.getElementById("bazarDateSource");
     
-    let date = isAdmin ? dateInput.value : getToday(); // Admin uses calendar, user is locked to today
+    let date = isAdmin ? dateInput.value : getToday();
 
     if(item && price && date) { 
         await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]); 
@@ -65,7 +73,51 @@ window.addBazar = async () => {
     }
 };
 
-// --- RENDERING LOGIC (Same as before) ---
+// --- BAZAR SCHEDULE LOGIC ---
+window.saveSchedule = async () => {
+    const date = document.getElementById("scheduleDate").value;
+    const member = document.getElementById("scheduleMember").value;
+    
+    if(!date || !member) return alert("Please select both a date and a member.");
+
+    try {
+        const { error } = await supabase.from('bazar_schedule').upsert([{ date, member }], { onConflict: 'date' });
+        if (error) throw error;
+        alert(`Successfully assigned ${member} for ${date}`);
+        fetchData(); 
+    } catch (err) {
+        alert("Failed to save schedule: " + err.message);
+    }
+};
+
+function renderBazarSchedule(scheduleData) {
+    const container = document.getElementById("bazarScheduleList");
+    if (!container) return;
+    const today = getToday();
+    
+    container.innerHTML = scheduleData.length ? scheduleData.slice(0, 6).map(s => `
+        <div class="schedule-item ${s.date === today ? 'duty-today' : ''}">
+            <span>${s.date === today ? 'TODAY' : s.date.split('-').slice(1).join('/')}</span>
+            <b>${s.member}</b>
+        </div>
+    `).join('') : '<p style="grid-column: 1/-1; text-align:center; padding:10px;">No schedule assigned</p>';
+}
+
+function updateDailyNotification(scheduleData) {
+    const alertDiv = document.getElementById("bazarAlert");
+    const nameEl = document.getElementById("todayBazarMember");
+    const today = getToday();
+    const todayDuty = scheduleData.find(s => s.date === today);
+    
+    if (todayDuty) {
+        alertDiv.style.display = "block";
+        nameEl.innerText = todayDuty.member;
+    } else {
+        alertDiv.style.display = "none";
+    }
+}
+
+// --- RENDERING LOGIC ---
 function renderPersonalStats(mList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m)) || "User";
     const count = mList.filter(m => m.member === name).length;
@@ -107,7 +159,6 @@ function renderCalendar(mList, monthYear) {
     document.getElementById("mealCalendar").innerHTML = html + "</tbody>";
 }
 
-// ... (Other functions like calcPersonalBill, saveMonthlyBills remain same as your original) ...
 window.calcPersonalBill = (m, mealBalance) => {
     const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
     const billsTotal = fields.reduce((sum, f) => sum + (Number(document.getElementById(`${f}-${m}`).value) || 0), 0);
@@ -158,66 +209,12 @@ window.renderBillsTab = (mList, bList, savedBills) => {
 };
 
 window.renderAdmin = (meals, bazar) => {
-    // 1. Render the Member Selection Sidebar
-    const adminMemberList = document.getElementById("adminMemberList");
-    adminMemberList.innerHTML = membersList.map(m => 
-        `<button class="${selectedAdminMember === m ? 'active' : ''}" 
-                 onclick="window.filterAdminByMember('${m}')">
-            ${m}
-         </button>`
-    ).join('');
-
-    // If no member is selected, clear the display or show a placeholder
-    if (!selectedAdminMember) {
-        document.getElementById("adminCurrentTitle").innerText = "Select a Member to View Records";
-        document.getElementById("adminMealBody").innerHTML = "";
-        document.getElementById("adminBazarBody").innerHTML = "";
-        return;
-    }
-
-    // 2. Update Header for Selected Member
-    document.getElementById("adminCurrentTitle").innerText = `Records for ${selectedAdminMember}`;
-
-    // 3. Filter and Process Data for the Selected Member
-    const filteredMeals = meals.filter(m => m.member === selectedAdminMember);
-    const filteredBazar = bazar.filter(b => b.member === selectedAdminMember);
-
-    // Group meals by date for a cleaner list
-    const groupedMeals = filteredMeals.reduce((acc, curr) => { 
-        acc[curr.date] = (acc[curr.date] || 0) + 1; 
-        return acc; 
-    }, {});
-
-    // 4. Render Meals List (Main Column)
-    document.getElementById("adminMealBody").innerHTML = Object.keys(groupedMeals)
-        .sort()
-        .reverse()
-        .map(date => `
-            <tr>
-                <td>${date}</td>
-                <td><b>${groupedMeals[date]}</b> Meals</td>
-                <td style="text-align:right">
-                    <button onclick="window.adjustMeal('${selectedAdminMember}','${date}')" class="btn-logout" style="padding: 4px 8px;">✕</button>
-                </td>
-            </tr>
-        `).join('') || '<tr><td colspan="3">No meals found</td></tr>';
-
-    // 5. Render Bazar List (Main Column)
-    document.getElementById("adminBazarBody").innerHTML = filteredBazar
-        .slice()
-        .reverse()
-        .map(item => `
-            <tr>
-                <td style="text-align:left">
-                    <b>${item.item}</b><br>
-                    <small>${item.date}</small>
-                </td>
-                <td><b>${item.price}৳</b></td>
-                <td style="text-align:right">
-                    <button onclick="window.del('bazar','${item.id}')" class="btn-logout" style="padding: 4px 8px;">✕</button>
-                </td>
-            </tr>
-        `).join('') || '<tr><td colspan="3">No bazar entries found</td></tr>';
+    document.getElementById("adminMemberList").innerHTML = membersList.map(m => `<button class="${selectedAdminMember === m ? 'active' : ''}" onclick="window.filterAdminByMember('${m}')">${m}</button>`).join('');
+    if (!selectedAdminMember) return;
+    const fM = meals.filter(m => m.member === selectedAdminMember), fB = bazar.filter(b => b.member === selectedAdminMember);
+    const gM = fM.reduce((acc, curr) => { acc[curr.date] = (acc[curr.date] || 0) + 1; return acc; }, {});
+    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button onclick="window.adjustMeal('${selectedAdminMember}','${d}')">✕</button></td></tr>`).join('');
+    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td style="text-align:left">${b.item}<br><small>${b.date}</small></td><td>${b.price}৳</td><td><button onclick="window.del('bazar','${b.id}')">✕</button></td></tr>`).join('');
 };
 
 window.adjustMeal = async (m, d) => { 
@@ -255,32 +252,30 @@ async function afterLogin() {
     document.getElementById("loginDiv").style.display = "none";
     document.getElementById("appDiv").style.display = "block";
     
-    // Set up Month Picker
-    const vM = document.getElementById("viewMonth"); vM.innerHTML = "";
+    const vM = document.getElementById("viewMonth"); 
+    vM.innerHTML = "";
     for(let i=0; i<3; i++) {
         let t = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
         vM.innerHTML += `<option value="${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}">${t.toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`;
     }
 
-    // Role-based Date Inputs
     if (isAdmin) {
         document.getElementById("mealDateContainer").innerHTML = `<input type="date" id="mealDateSource" value="${getToday()}">`;
         document.getElementById("bazarDateContainer").innerHTML = `<input type="date" id="bazarDateSource" value="${getToday()}">`;
     } else {
-        document.getElementById("mealDateContainer").innerHTML = `
-            <select id="mealDateSource">
-                <option value="today">Today</option>
-                <option value="tomorrow">Tomorrow</option>
-            </select>`;
+        document.getElementById("mealDateContainer").innerHTML = `<select id="mealDateSource"><option value="today">Today</option><option value="tomorrow">Tomorrow</option></select>`;
         document.getElementById("bazarDateContainer").innerHTML = `<input type="text" id="bazarDateSource" value="Today" disabled>`;
     }
 
     const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'User'}</option>`;
     document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
+    
+    // Fill the schedule member select
     const scheduleSelect = document.getElementById("scheduleMember");
     if (scheduleSelect) {
         scheduleSelect.innerHTML = membersList.map(m => `<option value="${m}">${m}</option>`).join('');
     }
+
     if(isAdmin) { 
         document.getElementById("adminTabBtn").style.display = "block"; 
         document.getElementById("adminBillBtn").style.display = "block";
@@ -288,68 +283,3 @@ async function afterLogin() {
     }
     fetchData();
 }
-
-// Function to handle the Daily Notification
-function updateDailyNotification(scheduleData) {
-    const alertDiv = document.getElementById("bazarAlert");
-    const nameEl = document.getElementById("todayBazarMember");
-    const today = getToday();
-    
-    // Find if anyone is assigned for today
-    const todayDuty = scheduleData.find(s => s.date === today);
-    
-    if (todayDuty) {
-        alertDiv.style.display = "block";
-        nameEl.innerText = todayDuty.member;
-    } else {
-        alertDiv.style.display = "none"; // Hide if no one is assigned
-    }
-}
-
-// --- BAZAR SCHEDULE CORE LOGIC ---
-window.saveSchedule = async () => {
-    const date = document.getElementById("scheduleDate").value;
-    const member = document.getElementById("scheduleMember").value;
-    
-    if(!date || !member) {
-        return alert("Please select both a date and a member.");
-    }
-
-    try {
-        // This sends the data to your Supabase bazar_schedule table
-        const { error } = await supabase
-            .from('bazar_schedule')
-            .upsert([{ date, member }], { onConflict: 'date' });
-
-        if (error) throw error;
-
-        alert(`Successfully assigned ${member} for ${date}`);
-        fetchData(); // Refresh everything to show the new notification
-    } catch (err) {
-        console.error("Error saving schedule:", err.message);
-        alert("Failed to save schedule. Check console for details.");
-    }
-};
-
-// Modify your fetchData to handle the notification and schedule list
-const originalFetchData = window.fetchData;
-window.fetchData = async () => {
-    // 1. Run your existing meal/bazar fetches
-    await originalFetchData(); 
-    
-    // 2. Fetch Schedule (Get 7 days worth of data)
-    const { data: schedule } = await supabase
-        .from('bazar_schedule')
-        .select('*')
-        .order('date', { ascending: true });
-
-    // 3. Update the Daily Notification Banner
-    updateDailyNotification(schedule || []);
-    
-    // 4. Update the Schedule Grid (The function we created in the previous step)
-    if (typeof renderBazarSchedule === "function") {
-        renderBazarSchedule(schedule || []);
-    }
-};
-
-
