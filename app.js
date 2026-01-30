@@ -8,6 +8,7 @@ const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "MASUM"];
 let currentUser = null;
 let isAdmin = false;
 let selectedAdminMember = null;
+let selectedBazarMember = null;
 
 const getToday = () => new Date().toLocaleDateString('en-CA');
 const getTomorrow = () => {
@@ -69,24 +70,32 @@ function renderGlobalBazarList(bList) {
 
     document.getElementById("bazarStats").innerHTML = `
         <div class="stat-card"><span>Monthly Total</span><b>${totalSpent}৳</b></div>
-        <div class="stat-card"><span>Your Spending</span><b>${userSpent}৳</b></div>`;
+        <div class="stat-card"><span>Your Total</span><b>${userSpent}৳</b></div>`;
 
-    const grouped = bList.reduce((acc, curr) => {
+    if (!selectedBazarMember) selectedBazarMember = name;
+
+    document.getElementById("bazarMemberNav").innerHTML = membersList.map(m => `
+        <button class="mini-tab ${selectedBazarMember === m ? 'active' : ''}" onclick="filterBazarByMember('${m}')">${m}</button>`).join('');
+
+    const filtered = bList.filter(b => b.member === selectedBazarMember);
+    const grouped = filtered.reduce((acc, curr) => {
         if (!acc[curr.date]) acc[curr.date] = { total: 0, items: [] };
         acc[curr.date].total += curr.price;
         acc[curr.date].items.push(curr);
         return acc;
     }, {});
 
-    document.getElementById("bazarList").innerHTML = Object.keys(grouped).sort().reverse().map(date => `
+    const html = Object.keys(grouped).sort().reverse().map(date => `
         <div class="day-group">
-            <div class="day-header"><span>${date}</span><span>${grouped[date].total}৳</span></div>
+            <div class="day-header"><span>${date}</span><span>Total: ${grouped[date].total}৳</span></div>
             ${grouped[date].items.map(item => `
                 <div class="bazar-row">
-                    <div class="bazar-info"><span class="item-name">${item.item}</span><span class="buyer-name">${item.member}</span></div>
-                    <div class="bazar-amount">${item.price}৳</div>
+                    <span class="item-name">${item.item}</span>
+                    <b class="bazar-amount">${item.price}৳</b>
                 </div>`).join('')}
-        </div>`).join('') || '<p>No entries</p>';
+        </div>`).join('');
+
+    document.getElementById("bazarList").innerHTML = `<h4>${selectedBazarMember}'s Records</h4>` + (html || '<p style="text-align:center; padding:20px;">No entries.</p>');
 }
 
 function renderSummary(mList, bList) {
@@ -128,6 +137,9 @@ function renderAdmin(meals, bazar) {
         <tr><td>${b.item} (${b.price}৳)</td><td><button class="btn-del" onclick="del('bazar','${b.id}')">✕</button></td></tr>`).join('') || '<tr><td>No bazar</td></tr>';
 }
 
+window.filterBazarByMember = (n) => { selectedBazarMember = n; fetchData(); };
+window.filterAdminByMember = (n) => { selectedAdminMember = n; fetchData(); };
+
 window.adjustMeal = async (m, d, c) => {
     if (c === 1) await supabase.from('meals').insert([{ member: m, date: d, added_by: currentUser.id }]);
     else {
@@ -137,7 +149,6 @@ window.adjustMeal = async (m, d, c) => {
     fetchData();
 };
 
-window.filterAdminByMember = (n) => { selectedAdminMember = n; fetchData(); };
 window.addMeal = async () => {
     const member = document.getElementById("mealMember").value;
     const count = parseInt(document.getElementById("mealCount").value);
