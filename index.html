@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Engineers_Hub Mess Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <div id="loginDiv" class="card login-card" style="display:none; max-width:400px; margin: 80px auto;">
+        <div id="loginDiv" class="card" style="display:none; max-width:400px; margin: 80px auto;">
             <h2 style="text-align:center">Mess Login</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
@@ -23,83 +23,80 @@
             </header>
 
             <nav class="tabs">
-                <button class="tab-btn active" onclick="openTab('calendar')">Attendance</button>
-                <button class="tab-btn" onclick="openTab('bazar')">Bazar</button>
-                <button class="tab-btn" onclick="openTab('summary')">Summary</button>
-                <button id="adminBillBtn" class="tab-btn admin-only" style="display:none" onclick="openTab('billsTab')">Personal Bills</button>
-                <button id="adminTabBtn" class="tab-btn" style="display:none" onclick="openTab('admin')">Admin</button>
+                <button class="tab-btn active" onclick="openTab('calendar', 0)">Attendance</button>
+                <button class="tab-btn" onclick="openTab('bazar', 1)">Bazar</button>
+                <button class="tab-btn" onclick="openTab('summary', 2)">Summary</button>
+                <button id="adminBillBtn" class="tab-btn admin-only" style="display:none" onclick="openTab('billsTab', 3)">Bills</button>
+                <button id="adminTabBtn" class="tab-btn admin-only" style="display:none" onclick="openTab('admin', 4)">Admin</button>
             </nav>
 
-            <div id="calendar" class="tab-content">
-                <div class="card">
-                    <h3>Add Meal</h3>
-                    <select id="mealMember"></select>
-                    <div class="input-group">
-                        <select id="mealDateType" onchange="toggleAdminDate()">
-                            <option value="today">Today</option>
-                            <option value="tomorrow">Tomorrow</option>
-                            <option value="custom" class="admin-only" style="display:none">Custom Date</option>
-                        </select>
-                        <input type="number" id="mealCount" value="1" min="1">
-                    </div>
-                    <input type="date" id="mealDate" class="admin-only" style="display:none; margin-bottom:12px;">
-                    <button onclick="addMeal()" class="btn-primary">Save Meal</button>
-                </div>
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                        <h3>Meal Log</h3>
-                        <select id="viewMonth" onchange="fetchData()" class="month-picker"></select>
-                    </div>
-                    <div style="overflow-x:auto"><table id="mealCalendar" class="pro-table"></table></div>
-                </div>
-            </div>
-
-            <div id="bazar" class="tab-content" style="display:none">
-                <div class="card">
-                    <h3>Add Expense</h3>
-                    <select id="bazarMember"></select>
-                    <div class="input-group">
-                        <input type="text" id="bazarItem" placeholder="Item name">
-                        <input type="number" id="bazarPrice" placeholder="Price">
-                    </div>
-                    <button onclick="addBazar()" class="btn-primary">Save Entry</button>
-                </div>
-                <div class="admin-layout">
-                    <aside class="admin-sidebar">
-                        <div id="bazarMemberNav" class="member-nav"></div>
-                        <button onclick="filterBazarByMember('ALL')" class="btn-all-list">View All</button>
-                    </aside>
-                    <main class="admin-main">
-                        <div class="card"><div id="bazarListContent" class="admin-scroll"></div></div>
-                    </main>
-                </div>
-            </div>
-
-            <div id="summary" class="tab-content" style="display:none">
-                <div id="summaryContent"></div>
-            </div>
-
-            <div id="billsTab" class="tab-content" style="display:none">
-                <div class="card">
-                    <div class="admin-data-header"><h3>Monthly Bill Records</h3></div>
-                    <div id="billsContent" class="table-container" style="overflow-x: auto;"></div>
-                    <div style="margin-top:20px; display:flex; gap:10px;">
-                        <button onclick="saveMonthlyBills()" class="btn-primary">Save All Records</button>
-                        <button onclick="window.print()" class="btn-primary" style="background:#64748b">Print PDF</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="admin" class="tab-content" style="display:none">
-                <div class="admin-layout">
-                    <aside class="admin-sidebar"><div id="adminMemberList" class="member-nav"></div></aside>
-                    <main class="admin-main">
-                        <h3 id="adminCurrentTitle">Select Member</h3>
-                        <div class="admin-grid-view">
-                            <div class="card"><h4>Meals</h4><div class="admin-scroll"><table class="pro-table"><tbody id="adminMealBody"></tbody></table></div></div>
-                            <div class="card"><h4>Bazar</h4><div class="admin-scroll"><table class="pro-table"><tbody id="adminBazarBody"></tbody></table></div></div>
+            <div class="tab-slider-view">
+                <div class="tab-slider-container">
+                    <div id="calendar" class="tab-content">
+                        <div class="card">
+                            <h3>Add Meal</h3>
+                            <select id="mealMember"></select>
+                            <div class="input-group">
+                                <select id="mealDateType" onchange="toggleAdminDate()">
+                                    <option value="today">Today</option>
+                                    <option value="tomorrow">Tomorrow</option>
+                                    <option value="custom" class="admin-only" style="display:none">Custom</option>
+                                </select>
+                                <input type="number" id="mealCount" value="1" min="1">
+                            </div>
+                            <input type="date" id="mealDate" class="admin-only" style="display:none; margin-bottom:12px;">
+                            <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                         </div>
-                    </main>
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+                                <h3>Meal Log</h3>
+                                <select id="viewMonth" onchange="fetchData()" style="width:auto; padding:5px;"></select>
+                            </div>
+                            <div class="table-container"><table id="mealCalendar" class="pro-table"></table></div>
+                        </div>
+                    </div>
+
+                    <div id="bazar" class="tab-content">
+                        <div class="card">
+                            <h3>Add Expense</h3>
+                            <select id="bazarMember"></select>
+                            <div class="input-group">
+                                <input type="text" id="bazarItem" placeholder="Item">
+                                <input type="number" id="bazarPrice" placeholder="Price">
+                            </div>
+                            <button onclick="addBazar()" class="btn-primary">Save Entry</button>
+                        </div>
+                        <div class="admin-layout">
+                            <div id="bazarListContent" style="width:100%"></div>
+                        </div>
+                    </div>
+
+                    <div id="summary" class="tab-content">
+                        <div id="summaryContent"></div>
+                    </div>
+
+                    <div id="billsTab" class="tab-content">
+                        <div class="card">
+                            <div class="admin-data-header"><h3>Monthly Bill Records</h3></div>
+                            <div id="billsContent" class="table-container"></div>
+                            <div style="margin-top:15px; display:flex; gap:10px;">
+                                <button onclick="saveMonthlyBills()" class="btn-primary">Save</button>
+                                <button onclick="window.print()" class="btn-primary" style="background:#64748b">Print</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="admin" class="tab-content">
+                        <div class="admin-layout">
+                            <aside class="admin-sidebar"><div id="adminMemberList" class="member-nav"></div></aside>
+                            <main class="admin-main">
+                                <div class="sub-grid">
+                                    <div class="card"><h4>Meals</h4><div id="adminMealBody"></div></div>
+                                    <div class="card"><h4>Bazar</h4><div id="adminBazarBody"></div></div>
+                                </div>
+                            </main>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
