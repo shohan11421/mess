@@ -10,44 +10,86 @@ let currentUser = null, isAdmin = false, selectedAdminMember = null, selectedBaz
 const getToday = () => new Date().toLocaleDateString('en-CA');
 const getTomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toLocaleDateString('en-CA'); };
 
+// --- CORE DATA FETCHING ---
 window.fetchData = async () => {
     const vMonth = document.getElementById("viewMonth");
     if (!vMonth || !vMonth.value) return;
     const monthVal = vMonth.value;
     const [year, mon] = monthVal.split('-').map(Number);
-    const firstDay = `${monthVal}-01`;
-    const lastDay = `${monthVal}-${new Date(year, mon, 0).getDate()}`;
+    const firstDay = `${monthVal}-01`, lastDay = `${monthVal}-${new Date(year, mon, 0).getDate()}`;
 
-    const { data: meals } = await supabase.from('meals').select('*').gte('date', firstDay).lte('date', lastDay);
-    const { data: bazar } = await supabase.from('bazar').select('*').gte('date', firstDay).lte('date', lastDay);
+    // Parallel fetching for performance
+    const [mealsRes, bazarRes, billsRes] = await Promise.all([
+        supabase.from('meals').select('*').gte('date', firstDay).lte('date', lastDay),
+        supabase.from('bazar').select('*').gte('date', firstDay).lte('date', lastDay),
+        supabase.from('monthly_bills').select('*').eq('month', monthVal)
+    ]);
+
+    const meals = mealsRes.data || [];
+    const bazar = bazarRes.data || [];
+    const savedBills = billsRes.data || [];
     
-    renderPersonalStats(meals || []);
-    renderCalendar(meals || [], monthVal);
-    renderSummary(meals || [], bazar || []);
-    renderBazarList(bazar || []);
-    renderBillsTab(meals || [], bazar || []);
+    renderPersonalStats(meals);
+    renderCalendar(meals, monthVal);
+    renderSummary(meals, bazar);
+    renderBazarList(bazar);
+    renderBillsTab(meals, bazar, savedBills);
     
-    if(isAdmin) renderAdmin(meals || [], bazar || []);
+    if(isAdmin) renderAdmin(meals, bazar);
 };
 
-// --- PERSONAL BILL LOGIC ---
+// --- PERSONAL BILL DATABASE LOGIC ---
+window.saveMonthlyBills = async () => {
+    const monthVal = document.getElementById("viewMonth").value;
+    
+    const updates = membersList.map(m => {
+        const balVal = parseFloat(document.getElementById(`bal-val-${m}`).innerText) || 0;
+        const totalPayable = parseFloat(document.getElementById(`final-${m}`).innerText) || 0;
+        
+        return {
+            month: monthVal,
+            member: m,
+            rent: Number(document.getElementById(`rent-${m}`).value) || 0,
+            wifi: Number(document.getElementById(`wifi-${m}`).value) || 0,
+            gas: Number(document.getElementById(`gas-${m}`).value) || 0,
+            elec: Number(document.getElementById(`elec-${m}`).value) || 0,
+            khala: Number(document.getElementById(`khala-${m}`).value) || 0,
+            meal_balance: balVal,
+            total_payable: totalPayable
+        };
+    });
+
+    const { error } = await supabase.from('monthly_bills').upsert(updates, { onConflict: 'month,member' });
+    
+    if (error) {
+        alert("Error saving: " + error.message);
+    } else {
+        alert("Bills for " + monthVal + " saved successfully!");
+    }
+};
+
 window.calcPersonalBill = (m, mealBalance) => {
     const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
-    const billsTotal = fields.reduce((sum, f) => sum + (Number(document.getElementById(`${f}-${m}`).value) || 0), 0);
+    const billsTotal = fields.reduce((sum, f) => {
+        return sum + (Number(document.getElementById(`${f}-${m}`).value) || 0);
+    }, 0);
+
     const final = billsTotal - mealBalance;
-    
     const target = document.getElementById(`final-${m}`);
     target.innerText = final.toFixed(2) + "৳";
     target.style.color = final > 0 ? "#ef4444" : "#10b981";
 };
 
-function renderBillsTab(mList, bList) {
+function renderBillsTab(mList, bList, savedBills) {
     const totalBazar = bList.reduce((s, b) => s + b.price, 0);
-    const rate = mList.length ? (totalBazar / mList.length) : 0;
+    const totalMeals = mList.length;
+    const rate = totalMeals ? (totalBazar / totalMeals) : 0;
 
     let html = `<table class="summary-table">
         <thead>
-            <tr><th>Member</th><th>Rent</th><th>Wifi</th><th>Gas</th><th>Elec</th><th>Khala</th><th>Meal Bal</th><th>Total</th></tr>
+            <tr>
+                <th>Member</th><th>Rent</th><th>Wifi</th><th>Gas</th><th>Elec</th><th>Khala</th><th>Meal Bal</th><th>Total</th>
+            </tr>
         </thead>
         <tbody>`;
 
@@ -55,21 +97,25 @@ function renderBillsTab(mList, bList) {
         const meals = mList.filter(ml => ml.member === m).length;
         const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
         const bal = Number((paid - (meals * rate)).toFixed(2));
+        
+        // Find existing DB data for this month
+        const s = savedBills.find(sb => sb.member === m) || {};
 
         html += `<tr>
             <td class="name-cell">${m}</td>
-            <td><input type="number" id="rent-${m}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
-            <td><input type="number" id="wifi-${m}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
-            <td><input type="number" id="gas-${m}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
-            <td><input type="number" id="elec-${m}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
-            <td><input type="number" id="khala-${m}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
-            <td style="font-weight:bold; color:${bal >= 0 ? '#10b981' : '#ef4444'}">${bal}</td>
-            <td id="final-${m}" style="font-weight:900;">0.00৳</td>
+            <td><input type="number" id="rent-${m}" value="${s.rent || ''}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
+            <td><input type="number" id="wifi-${m}" value="${s.wifi || ''}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
+            <td><input type="number" id="gas-${m}" value="${s.gas || ''}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
+            <td><input type="number" id="elec-${m}" value="${s.elec || ''}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
+            <td><input type="number" id="khala-${m}" value="${s.khala || ''}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
+            <td id="bal-val-${m}" style="font-weight:bold; color:${bal >= 0 ? '#10b981' : '#ef4444'}">${bal}</td>
+            <td id="final-${m}" style="font-weight:900;">${s.total_payable ? s.total_payable.toFixed(2) : '0.00'}৳</td>
         </tr>`;
     });
     document.getElementById("billsContent").innerHTML = html + "</tbody></table>";
 }
 
+// --- UI RENDERING ---
 function renderPersonalStats(mList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m)) || "User";
     const count = mList.filter(m => m.member === name).length;
@@ -81,9 +127,14 @@ function renderSummary(mList, bList) {
     const totalMeals = mList.length;
     const rate = totalMeals ? (totalBazar / totalMeals).toFixed(2) : 0;
 
-    let html = `<div class="summary-black-card"><p>Total Bazar: ${totalBazar}৳ | Meals: ${totalMeals} | Rate: ${rate}৳</p></div>
-                <table class="summary-table">
-                <thead><tr><th>MEMBER</th><th>MEALS</th><th>COST</th><th>PAID</th><th>STATUS</th></tr></thead><tbody>`;
+    let html = `
+        <div class="summary-black-card">
+            <p>Total Bazar: <b>${totalBazar}৳</b> | Total Meals: <b>${totalMeals}</b> | Rate: <b>${rate}৳</b></p>
+        </div>
+        <div class="table-container">
+            <table class="summary-table">
+                <thead><tr><th>MEMBER</th><th>MEALS</th><th>COST</th><th>PAID</th><th>STATUS</th></tr></thead>
+                <tbody>`;
 
     membersList.forEach(m => {
         const meals = mList.filter(ml => ml.member === m).length;
@@ -93,7 +144,7 @@ function renderSummary(mList, bList) {
         html += `<tr><td class="name-cell">${m}</td><td>${meals}</td><td>${cost}৳</td><td>${paid}৳</td>
                  <td style="color:${bal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">${bal}৳</td></tr>`;
     });
-    document.getElementById("summaryContent").innerHTML = html + "</tbody></table>";
+    document.getElementById("summaryContent").innerHTML = html + "</tbody></table></div>";
 }
 
 function renderBazarList(bList) {
@@ -101,13 +152,12 @@ function renderBazarList(bList) {
         membersList.map(m => `<button class="${selectedBazarMember === m ? 'active' : ''}" onclick="filterBazarByMember('${m}')">${m}</button>`).join('');
     
     let display = (selectedBazarMember && selectedBazarMember !== 'ALL') ? bList.filter(b => b.member === selectedBazarMember) : bList;
-    document.getElementById("bazarCurrentViewTitle").innerText = selectedBazarMember === 'ALL' ? "All Records" : `Records: ${selectedBazarMember}`;
-    
+    document.getElementById("bazarCurrentViewTitle").innerText = selectedBazarMember === 'ALL' ? "All Records" : `Records: ${selectedBazarMember || 'Select Member'}`;
     document.getElementById("bazarListContent").innerHTML = display.slice().reverse().map(b => `
         <div class="bazar-row">
             <div class="bazar-info"><b>${b.item}</b><span>${b.member} • ${b.date}</span></div>
             <b>${b.price}৳</b>
-        </div>`).join('') || '<p>No records</p>';
+        </div>`).join('') || '<p style="text-align:center; padding:10px;">No records</p>';
 }
 
 function renderCalendar(mList, monthYear) {
@@ -127,18 +177,17 @@ function renderCalendar(mList, monthYear) {
 function renderAdmin(meals, bazar) {
     document.getElementById("adminMemberList").innerHTML = membersList.map(m => `<button class="${selectedAdminMember === m ? 'active' : ''}" onclick="filterAdminByMember('${m}')">${m}</button>`).join('');
     if (!selectedAdminMember) return;
+    document.getElementById("adminCurrentTitle").innerText = `Editing: ${selectedAdminMember}`;
     const fM = meals.filter(m => m.member === selectedAdminMember), fB = bazar.filter(b => b.member === selectedAdminMember);
     const gM = fM.reduce((acc, curr) => { acc[curr.date] = (acc[curr.date] || 0) + 1; return acc; }, {});
-    
-    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button onclick="adjustMeal('${selectedAdminMember}','${d}',-1)">✕</button></td></tr>`).join('');
-    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td>${b.item}<br><small>${b.date}</small></td><td>${b.price}৳</td><td><button onclick="del('bazar','${b.id}')">✕</button></td></tr>`).join('');
+    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button class="btn-del-mini" onclick="adjustMeal('${selectedAdminMember}','${d}')">✕</button></td></tr>`).join('');
+    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td style="text-align:left">${b.item}<br><small>${b.date}</small></td><td>${b.price}৳</td><td><button class="btn-del-mini" onclick="del('bazar','${b.id}')">✕</button></td></tr>`).join('');
 }
 
-// Window functions for HTML access
+// --- ACTION HANDLERS ---
 window.filterBazarByMember = (n) => { selectedBazarMember = n; fetchData(); };
 window.filterAdminByMember = (n) => { selectedAdminMember = n; fetchData(); };
 window.toggleAdminDate = () => { document.getElementById("mealDate").style.display = document.getElementById("mealDateType").value === 'custom' ? 'block' : 'none'; };
-window.toggleBazarAdminDate = () => { document.getElementById("bazarDate").style.display = document.getElementById("bazarDateType").value === 'custom' ? 'block' : 'none'; };
 
 window.addMeal = async () => {
     const member = document.getElementById("mealMember").value, count = parseInt(document.getElementById("mealCount").value);
@@ -150,8 +199,7 @@ window.addMeal = async () => {
 
 window.addBazar = async () => {
     const item = document.getElementById("bazarItem").value, price = Number(document.getElementById("bazarPrice").value), member = document.getElementById("bazarMember").value;
-    const dateType = document.getElementById("bazarDateType")?.value || 'today';
-    let date = (isAdmin && dateType === "custom") ? document.getElementById("bazarDate").value : getToday();
+    let date = getToday();
     if(item && price) { 
         await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]); 
         document.getElementById("bazarItem").value=""; document.getElementById("bazarPrice").value=""; fetchData(); 
@@ -169,10 +217,11 @@ window.logout = async () => { await supabase.auth.signOut(); location.reload(); 
 window.del = async (t, id) => { if(confirm("Delete?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
 window.adjustMeal = async (m, d) => { 
     const { data } = await supabase.from('meals').select('id').eq('member', m).eq('date', d).limit(1); 
-    if (data.length) await supabase.from('meals').delete().eq('id', data[0].id); 
+    if (data && data.length) await supabase.from('meals').delete().eq('id', data[0].id); 
     fetchData(); 
 };
 
+// --- AUTH & INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
     supabase.auth.onAuthStateChange((event, session) => { 
         if (session) { currentUser = session.user; afterLogin(); } 
@@ -191,7 +240,7 @@ async function afterLogin() {
     document.getElementById("loginDiv").style.display = "none";
     document.getElementById("appDiv").style.display = "block";
     
-    const vM = document.getElementById("viewMonth");
+    const vM = document.getElementById("viewMonth"); 
     vM.innerHTML = "";
     for(let i=0; i<3; i++) {
         let t = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
