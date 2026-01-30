@@ -82,8 +82,12 @@ function renderSummary(mList, bList) {
 
 window.renderBillsTab = (mList, bList, savedBills) => {
     let html = `
-        <div style="margin-bottom:10px; text-align:right;">
-            <button onclick="window.clearBillInputs()" style="background:#ef4444; color:white; padding:5px 10px; border-radius:4px; border:none; font-size:11px; cursor:pointer;">Clear Inputs</button>
+        <div style="margin-bottom:10px; display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between;">
+            <button onclick="window.clearBillInputs()" style="background:#ef4444; color:white; padding:8px 12px; border-radius:4px; border:none; cursor:pointer;">Clear All</button>
+            <div style="display:flex; gap:5px;">
+                <button onclick="window.printPDF(true)" style="background:#10b981; color:white; padding:8px 12px; border-radius:4px; border:none;">📤 Share PDF</button>
+                <button onclick="window.shareAsText()" style="background:#25d366; color:white; padding:8px 12px; border-radius:4px; border:none;">💬 WA Text</button>
+            </div>
         </div>
         <table class="summary-table" id="printableTable"><thead><tr><th>Member</th><th>Rent</th><th>Wifi</th><th>Gas</th><th>Elec</th><th>Khala</th><th>Meal Bal</th><th>Total</th></tr></thead><tbody>`;
     
@@ -103,23 +107,68 @@ window.renderBillsTab = (mList, bList, savedBills) => {
     });
     document.getElementById("billsContent").innerHTML = html + "</tbody></table>";
 
-    // Auto-calculate on load
     membersList.forEach(m => {
         const stats = getMemberMath(m, mList, bList);
         window.calcPersonalBill(m, stats.rawBalance);
     });
 };
 
+// --- CORE LOGIC: SHARING & PRINTING ---
+window.printPDF = async (shouldShare = false) => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4'); 
+    const month = document.getElementById("viewMonth").value;
+
+    doc.setFontSize(18);
+    doc.text(`Engineers_Hub Mess Bill - ${month}`, 14, 15);
+
+    doc.autoTable({
+        html: '#printableTable',
+        startY: 25,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [30, 41, 59] },
+        didParseCell: function(data) {
+            // Capture the real-time input values for the PDF
+            if (data.section === 'body' && data.column.index > 0 && data.column.index < 6) {
+                const member = membersList[data.row.index];
+                const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
+                const fieldName = fields[data.column.index - 1];
+                const inputVal = document.getElementById(`${fieldName}-${member}`).value;
+                data.cell.text = inputVal || '0';
+            }
+        }
+    });
+
+    if (shouldShare && navigator.canShare) {
+        const pdfBlob = doc.output('blob');
+        const file = new File([pdfBlob], `Mess_Bill_${month}.pdf`, { type: 'application/pdf' });
+        try {
+            await navigator.share({ files: [file], title: `Mess Bill ${month}` });
+        } catch (err) { 
+            doc.save(`Mess_Bill_${month}.pdf`); 
+        }
+    } else {
+        doc.save(`Mess_Bill_${month}.pdf`);
+    }
+};
+
+window.shareAsText = () => {
+    const month = document.getElementById("viewMonth").value;
+    let report = `*Engineers_Hub Bill (${month})*\n\n`;
+    membersList.forEach(m => {
+        const total = document.getElementById(`final-${m}`).innerText;
+        report += `👤 *${m}* -> *${total}*\n`;
+    });
+    window.open(`https://wa.me/?text=${encodeURIComponent(report)}`, '_blank');
+};
+
+// --- CALC & SAVE LOGIC ---
 window.calcPersonalBill = (m, mealBalance) => {
     const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
     const billsTotal = fields.reduce((sum, f) => sum + (Number(document.getElementById(`${f}-${m}`).value) || 0), 0);
-    
-    // Total Utilities - Meal Surplus (adds automatically if debt is negative)
     const rawFinal = billsTotal - Number(mealBalance);
-    
-    // Rounding: 0.5 threshold logic
     const roundedFinal = Math.round(rawFinal);
-    
     const target = document.getElementById(`final-${m}`);
     if(target) {
         target.innerText = roundedFinal + "৳";
@@ -142,7 +191,6 @@ window.saveMonthlyBills = async () => {
     const updates = membersList.map(m => {
         const mealBal = Number(document.getElementById(`status-val-${m}`).dataset.bal) || 0;
         const totalPayable = parseInt(document.getElementById(`final-${m}`).innerText.replace('৳', '')) || 0;
-
         return {
             month, member: m,
             rent: Number(document.getElementById(`rent-${m}`).value) || 0,
@@ -158,7 +206,7 @@ window.saveMonthlyBills = async () => {
     alert("Cloud Update Successful!");
 };
 
-// --- ACTIONS & UI ---
+// --- UI UTILITIES (Bazar, Schedule, Admin, etc.) ---
 window.addMeal = async () => {
     const member = document.getElementById("mealMember").value;
     const count = parseInt(document.getElementById("mealCount").value);
