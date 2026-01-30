@@ -6,7 +6,67 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "MASUM"]; 
 let currentUser = null, isAdmin = false, selectedAdminMember = null, selectedBazarMember = null, isSettlementVisible = false;
+// ... (Keep your Supabase init and other functions exactly as they are) ...
 
+// Ensure these variables are at the TOP of your app.js
+let isSettlementVisible = false;
+
+window.toggleSettlement = () => {
+    isSettlementVisible = !isSettlementVisible;
+    const btn = document.getElementById("publishBtn");
+    if (btn) {
+        btn.innerText = `Show Settlement: ${isSettlementVisible ? 'ON' : 'OFF'}`;
+        btn.style.background = isSettlementVisible ? "#10b981" : "#fff7ed";
+        btn.style.color = isSettlementVisible ? "white" : "#b45309";
+    }
+    renderFinalSettlement();
+};
+
+window.renderFinalSettlement = () => {
+    const wrapper = document.getElementById("finalSettlementWrapper");
+    const body = document.getElementById("finalSettlementBody");
+    if (!wrapper || !body) return;
+
+    // Show if Admin is logged in OR if Admin turned on "Publication"
+    if (isAdmin || isSettlementVisible) {
+        wrapper.style.display = "block";
+        const summaryRows = document.querySelectorAll("#summaryContent table tbody tr");
+        let html = "";
+
+        summaryRows.forEach((row, index) => {
+            const name = row.cells[0].innerText;
+            const mealBal = parseFloat(row.cells[4].innerText.replace('৳', '')) || 0;
+
+            html += `
+                <tr>
+                    <td class="name-cell">${name}</td>
+                    <td style="color:${mealBal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">${mealBal >= 0 ? '+' : ''}${mealBal.toFixed(0)}৳</td>
+                    <td contenteditable="${isAdmin}" class="editable-bill" id="rent-${index}" oninput="calcTotalNet(${index}, ${mealBal})">0</td>
+                    <td contenteditable="${isAdmin}" class="editable-bill" id="wifi-${index}" oninput="calcTotalNet(${index}, ${mealBal})">0</td>
+                    <td contenteditable="${isAdmin}" class="editable-bill" id="gas-${index}" oninput="calcTotalNet(${index}, ${mealBal})">0</td>
+                    <td contenteditable="${isAdmin}" class="editable-bill" id="elect-${index}" oninput="calcTotalNet(${index}, ${mealBal})">0</td>
+                    <td contenteditable="${isAdmin}" class="editable-bill" id="khala-${index}" oninput="calcTotalNet(${index}, ${mealBal})">0</td>
+                    <td id="totalNet-${index}" style="font-weight:800; background:#f0fdf4;">${(0 - mealBal).toFixed(0)}৳</td>
+                </tr>`;
+        });
+        body.innerHTML = html;
+    } else {
+        wrapper.style.display = "none";
+    }
+};
+
+window.calcTotalNet = (idx, mealBal) => {
+    const r = parseFloat(document.getElementById(`rent-${idx}`).innerText) || 0;
+    const w = parseFloat(document.getElementById(`wifi-${idx}`).innerText) || 0;
+    const g = parseFloat(document.getElementById(`gas-${idx}`).innerText) || 0;
+    const e = parseFloat(document.getElementById(`elect-${idx}`).innerText) || 0;
+    const k = parseFloat(document.getElementById(`khala-${idx}`).innerText) || 0;
+
+    const totalBills = r + w + g + e + k;
+    const netPayable = totalBills - mealBal;
+    
+    document.getElementById(`totalNet-${idx}`).innerText = netPayable.toFixed(0) + "৳";
+};
 const getToday = () => new Date().toLocaleDateString('en-CA');
 const getTomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toLocaleDateString('en-CA'); };
 
@@ -163,3 +223,4 @@ async function afterLogin() {
     if(isAdmin) { document.getElementById("adminTabBtn").style.display = "block"; document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); }
     fetchData();
 }
+
