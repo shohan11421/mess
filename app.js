@@ -7,18 +7,18 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "SHOJIB", "MASUM"]; 
 let currentUser = null, isAdmin = false, isSettlementVisible = false;
 
-// PUBLICATION TOGGLE FIX
+// PUBLICATION LOGIC
 window.toggleSettlement = () => {
     isSettlementVisible = !isSettlementVisible;
-    localStorage.setItem('pub_status', isSettlementVisible); // Save for persistence
-    updatePubButton();
+    localStorage.setItem('pub_status', isSettlementVisible); // Save status
+    updatePubUI();
     renderFinalSettlement();
 };
 
-function updatePubButton() {
+function updatePubUI() {
     const btn = document.getElementById("publishBtn");
     if (!btn) return;
-    btn.innerText = `Statement: ${isSettlementVisible ? 'PUBLIC' : 'HIDDEN'}`;
+    btn.innerText = `Statement: ${isSettlementVisible ? 'PUBLIC (ON)' : 'HIDDEN (OFF)'}`;
     btn.className = isSettlementVisible ? "btn-pub-on" : "btn-pub-off";
 }
 
@@ -27,8 +27,8 @@ window.renderFinalSettlement = () => {
     const body = document.getElementById("finalSettlementBody");
     if (!wrapper || !body) return;
 
-    // Load visibility from storage if not admin
-    if (!isAdmin) isSettlementVisible = localStorage.getItem('pub_status') === 'true';
+    // Users check local storage for status
+    isSettlementVisible = localStorage.getItem('pub_status') === 'true';
 
     if (isAdmin || isSettlementVisible) {
         wrapper.style.display = "block";
@@ -38,7 +38,7 @@ window.renderFinalSettlement = () => {
             const name = row.cells[0].innerText;
             const mealBal = parseFloat(row.cells[4].innerText.replace('৳', '')) || 0;
             
-            // Load saved values if they exist
+            // Get saved individual bills
             const r = localStorage.getItem(`r-${index}`) || 0;
             const w = localStorage.getItem(`w-${index}`) || 0;
             const g = localStorage.getItem(`g-${index}`) || 0;
@@ -53,7 +53,7 @@ window.renderFinalSettlement = () => {
                 <td contenteditable="${isAdmin}" class="editable-bill" oninput="saveAndCalc(${index}, ${mealBal}, 'g', this)">${g}</td>
                 <td contenteditable="${isAdmin}" class="editable-bill" oninput="saveAndCalc(${index}, ${mealBal}, 'e', this)">${e}</td>
                 <td contenteditable="${isAdmin}" class="editable-bill" oninput="saveAndCalc(${index}, ${mealBal}, 'k', this)">${k}</td>
-                <td id="net-${index}" style="font-weight:800">${(Number(r)+Number(w)+Number(g)+Number(e)+Number(k)-mealBal).toFixed(0)}৳</td>
+                <td id="net-${index}" style="font-weight:800; background:#f0fdf4">${(Number(r)+Number(w)+Number(g)+Number(e)+Number(k)-mealBal).toFixed(0)}৳</td>
             </tr>`;
         });
         body.innerHTML = html;
@@ -63,14 +63,11 @@ window.renderFinalSettlement = () => {
 };
 
 window.saveAndCalc = (idx, mealBal, key, el) => {
-    const val = el.innerText || 0;
-    localStorage.setItem(`${key}-${idx}`, val); // Persistence
-    
+    localStorage.setItem(`${key}-${idx}`, el.innerText || 0);
     const row = el.parentElement;
-    const bills = row.querySelectorAll('.editable-bill');
     let total = 0;
-    bills.forEach(b => total += (parseFloat(b.innerText) || 0));
+    row.querySelectorAll('.editable-bill').forEach(b => total += (parseFloat(b.innerText) || 0));
     document.getElementById(`net-${idx}`).innerText = (total - mealBal).toFixed(0) + "৳";
 };
 
-// ... (Rest of your addMeal, addBazar, fetchData functions) ...
+// ... Include your existing Supabase auth and data fetching functions here ...
