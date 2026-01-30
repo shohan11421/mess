@@ -90,7 +90,7 @@ function renderGlobalBazarList(bList) {
         <div class="bazar-item"><span>${b.date} - <b>${b.member}</b> (${b.item})</span><b>${b.price}৳</b></div>`).join('');
 }
 
-// --- GROUPED ADMIN RENDER ---
+// --- PROFESSIONAL GROUPED ADMIN RENDER ---
 function renderAdmin(meals, bazar) {
     const listEl = document.getElementById("adminMemberList");
     listEl.innerHTML = membersList.map(m => `
@@ -99,7 +99,7 @@ function renderAdmin(meals, bazar) {
 
     if (!selectedAdminMember) return;
 
-    // Group Meals by Date
+    // 1. Group Meals by Date
     const filteredMeals = meals.filter(m => m.member === selectedAdminMember);
     const groupedMeals = filteredMeals.reduce((acc, curr) => {
         if (!acc[curr.date]) acc[curr.date] = { date: curr.date, count: 0 };
@@ -107,9 +107,18 @@ function renderAdmin(meals, bazar) {
         return acc;
     }, {});
 
+    // 2. Group Bazar by Date
+    const filteredBazar = bazar.filter(b => b.member === selectedAdminMember);
+    const groupedBazar = filteredBazar.reduce((acc, curr) => {
+        if (!acc[curr.date]) acc[curr.date] = { date: curr.date, total: 0, items: [] };
+        acc[curr.date].total += curr.price;
+        acc[curr.date].items.push(curr);
+        return acc;
+    }, {});
+
     document.getElementById("adminDataHeader").innerHTML = `<h3>Managing: ${selectedAdminMember}</h3>`;
 
-    // Render Grouped Meals
+    // Render Meals Table
     document.getElementById("adminMealBody").innerHTML = Object.values(groupedMeals)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .map(g => `
@@ -122,14 +131,19 @@ function renderAdmin(meals, bazar) {
             </td>
         </tr>`).join('') || '<tr><td colspan="3">No records</td></tr>';
 
-    // Render Bazar List
-    const filteredBazar = bazar.filter(b => b.member === selectedAdminMember);
-    document.getElementById("adminBazarBody").innerHTML = filteredBazar.reverse().map(b => `
-        <tr>
-            <td style="text-align:left">${b.item} (${b.date})</td>
-            <td><b>${b.price}৳</b></td>
-            <td><button class="btn-del" onclick="del('bazar','${b.id}')">✕</button></td>
-        </tr>`).join('') || '<tr><td colspan="3">No records</td></tr>';
+    // Render Grouped Bazar Table
+    document.getElementById("adminBazarBody").innerHTML = Object.values(groupedBazar)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .map(g => `
+        <tr style="background:#f1f5f9"><td colspan="3" style="text-align:left"><b>${g.date}</b> (Total: ${g.total}৳)</td></tr>
+        ${g.items.map(item => `
+            <tr>
+                <td style="text-align:left; padding-left:20px; font-size:12px;">${item.item}</td>
+                <td>${item.price}৳</td>
+                <td><button class="btn-del" onclick="del('bazar','${item.id}')">✕</button></td>
+            </tr>
+        `).join('')}
+    `).join('') || '<tr><td colspan="3">No records</td></tr>';
 }
 
 // --- ACTIONS ---
