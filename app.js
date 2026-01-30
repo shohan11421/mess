@@ -39,7 +39,7 @@ window.fetchData = async () => {
     renderPersonalDashboard(meals || []);
     renderCalendar(meals || [], monthVal);
     renderSummary(meals || [], bazar || []);
-    renderGlobalBazarList(bazar || []);
+    renderGlobalBazarList(bazar || [], meals || []);
     if(isAdmin) renderAdmin(meals || [], bazar || []);
 };
 
@@ -63,39 +63,43 @@ function renderCalendar(mList, monthYear) {
     document.getElementById("mealCalendar").innerHTML = html + "</tbody>";
 }
 
-function renderGlobalBazarList(bList) {
+function renderGlobalBazarList(bList, mList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m));
     const totalSpent = bList.reduce((s, b) => s + b.price, 0);
     const userSpent = bList.filter(b => b.member === name).reduce((s, b) => s + b.price, 0);
 
     document.getElementById("bazarStats").innerHTML = `
-        <div class="stat-card"><span>Monthly Total</span><b>${totalSpent}৳</b></div>
-        <div class="stat-card"><span>Your Total</span><b>${userSpent}৳</b></div>`;
-
-    if (!selectedBazarMember) selectedBazarMember = name;
+        <div class="stat-card"><span>Mess Total</span><b>${totalSpent}৳</b></div>
+        <div class="stat-card"><span>My Total</span><b>${userSpent}৳</b></div>`;
 
     document.getElementById("bazarMemberNav").innerHTML = membersList.map(m => `
-        <button class="mini-tab ${selectedBazarMember === m ? 'active' : ''}" onclick="filterBazarByMember('${m}')">${m}</button>`).join('');
+        <button class="${selectedBazarMember === m ? 'active' : ''}" onclick="filterBazarByMember('${m}')">${m}</button>`).join('');
 
-    const filtered = bList.filter(b => b.member === selectedBazarMember);
-    const grouped = filtered.reduce((acc, curr) => {
-        if (!acc[curr.date]) acc[curr.date] = { total: 0, items: [] };
-        acc[curr.date].total += curr.price;
-        acc[curr.date].items.push(curr);
+    let displayBazar = bList;
+    let displayMeals = mList;
+    let title = "Full Mess Records";
+
+    if (selectedBazarMember && selectedBazarMember !== 'ALL') {
+        displayBazar = bList.filter(b => b.member === selectedBazarMember);
+        displayMeals = mList.filter(m => m.member === selectedBazarMember);
+        title = `Records: ${selectedBazarMember}`;
+    }
+
+    document.getElementById("bazarCurrentViewTitle").innerText = title;
+
+    document.getElementById("bazarListContent").innerHTML = displayBazar.slice().reverse().map(b => `
+        <div class="bazar-row">
+            <div class="bazar-info"><span class="item-name">${b.item}</span><span class="buyer-name">${b.member} • ${b.date}</span></div>
+            <b class="bazar-amount">${b.price}৳</b>
+        </div>`).join('') || '<p>No data</p>';
+
+    const mealGrouped = displayMeals.reduce((acc, curr) => {
+        acc[curr.date] = (acc[curr.date] || 0) + 1;
         return acc;
     }, {});
 
-    const html = Object.keys(grouped).sort().reverse().map(date => `
-        <div class="day-group">
-            <div class="day-header"><span>${date}</span><span>Total: ${grouped[date].total}৳</span></div>
-            ${grouped[date].items.map(item => `
-                <div class="bazar-row">
-                    <span class="item-name">${item.item}</span>
-                    <b class="bazar-amount">${item.price}৳</b>
-                </div>`).join('')}
-        </div>`).join('');
-
-    document.getElementById("bazarList").innerHTML = `<h4>${selectedBazarMember}'s Records</h4>` + (html || '<p style="text-align:center; padding:20px;">No entries.</p>');
+    document.getElementById("bazarMealContent").innerHTML = Object.keys(mealGrouped).sort().reverse().map(date => `
+        <div class="bazar-row"><span>${date}</span><b>${mealGrouped[date]} Meals</b></div>`).join('') || '<p>No data</p>';
 }
 
 function renderSummary(mList, bList) {
@@ -126,7 +130,7 @@ function renderAdmin(meals, bazar) {
         acc[curr.date].count++; return acc;
     }, {});
 
-    document.getElementById("adminDataHeader").innerHTML = `<h3>Managing: ${selectedAdminMember}</h3>`;
+    document.getElementById("adminDataHeader").innerHTML = `<h3>Admin: ${selectedAdminMember}</h3>`;
     document.getElementById("adminMealBody").innerHTML = Object.values(groupedMeals).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(g => `
         <tr><td>${g.date}</td><td><b>${g.count}</b></td><td>
             <button class="btn-del" onclick="adjustMeal('${selectedAdminMember}','${g.date}',-1)">−</button>
