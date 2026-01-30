@@ -96,7 +96,7 @@ function renderBazarList(bList) {
 function renderCalendar(mList, monthYear) {
     const [y, m] = monthYear.split('-').map(Number);
     const days = new Date(y, m, 0).getDate();
-    let html = `<thead><tr><th>Day</th>${membersList.map(n => `<th>${n[0]}</th>`).join('')}</tr></thead><tbody>`;
+    let html = `<thead><tr><th>Day</th>${membersList.map(n => `<th>${n}</th>`).join('')}</tr></thead><tbody>`;
     for (let i = 1; i <= days; i++) {
         const dStr = `${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
         html += `<tr><td>${i}</td>${membersList.map(n => {
@@ -231,3 +231,4 @@ async function afterLogin() {
     }
     fetchData();
 }
+
