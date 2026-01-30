@@ -17,7 +17,6 @@ window.fetchData = async () => {
     const [year, mon] = monthVal.split('-').map(Number);
     const firstDay = `${monthVal}-01`, lastDay = `${monthVal}-${new Date(year, mon, 0).getDate()}`;
 
-    // Parallel Data Fetching
     const [mealsRes, bazarRes, billsRes, scheduleRes] = await Promise.all([
         supabase.from('meals').select('*').gte('date', firstDay).lte('date', lastDay),
         supabase.from('bazar').select('*').gte('date', firstDay).lte('date', lastDay),
@@ -30,7 +29,6 @@ window.fetchData = async () => {
     const savedBills = billsRes.data || [];
     const schedule = scheduleRes.data || [];
 
-    // Render UI Components
     renderPersonalStats(meals);
     renderCalendar(meals, monthVal);
     renderSummary(meals, bazar);
@@ -47,9 +45,7 @@ window.addMeal = async () => {
     const member = document.getElementById("mealMember").value;
     const count = parseInt(document.getElementById("mealCount").value);
     const dateInput = document.getElementById("mealDateSource");
-    
     let date = isAdmin ? dateInput.value : (dateInput.value === "today" ? getToday() : getTomorrow());
-
     if(!date) return alert("Select Date");
     await supabase.from('meals').insert(Array.from({length: count}, () => ({ member, date, added_by: currentUser.id })));
     fetchData();
@@ -60,33 +56,41 @@ window.addBazar = async () => {
     const price = Number(document.getElementById("bazarPrice").value);
     const member = document.getElementById("bazarMember").value;
     const dateInput = document.getElementById("bazarDateSource");
-    
     let date = isAdmin ? dateInput.value : getToday();
-
     if(item && price && date) { 
         await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]); 
         document.getElementById("bazarItem").value=""; 
         document.getElementById("bazarPrice").value=""; 
         fetchData(); 
-    } else {
-        alert("Fill all fields");
-    }
+    } else { alert("Fill all fields"); }
 };
 
 // --- BAZAR SCHEDULE LOGIC ---
 window.saveSchedule = async () => {
     const date = document.getElementById("scheduleDate").value;
     const member = document.getElementById("scheduleMember").value;
+    const items = document.getElementById("scheduleItems").value; // Get the text field value
     
-    if(!date || !member) return alert("Please select both a date and a member.");
+    if(!date || !member) return alert("Please select date and member.");
 
     try {
-        const { error } = await supabase.from('bazar_schedule').upsert([{ date, member }], { onConflict: 'date' });
+        const { error } = await supabase.from('bazar_schedule').upsert([{ 
+            date, 
+            member, 
+            items_to_bring: items 
+        }], { onConflict: 'date' });
         if (error) throw error;
-        alert(`Successfully assigned ${member} for ${date}`);
+        alert(`Assigned ${member}`);
+        document.getElementById("scheduleItems").value = ""; // Clear text field
         fetchData(); 
-    } catch (err) {
-        alert("Failed to save schedule: " + err.message);
+    } catch (err) { alert("Failed: " + err.message); }
+};
+
+window.deleteSchedule = async (date) => {
+    if(confirm(`Delete duty for ${date}?`)) {
+        const { error } = await supabase.from('bazar_schedule').delete().eq('date', date);
+        if (error) alert("Error: " + error.message);
+        fetchData();
     }
 };
 
@@ -96,9 +100,11 @@ function renderBazarSchedule(scheduleData) {
     const today = getToday();
     
     container.innerHTML = scheduleData.length ? scheduleData.slice(0, 6).map(s => `
-        <div class="schedule-item ${s.date === today ? 'duty-today' : ''}">
+        <div class="schedule-item ${s.date === today ? 'duty-today' : ''}" style="position:relative; padding-top:15px;">
+            ${isAdmin ? `<button onclick="window.deleteSchedule('${s.date}')" style="position:absolute; top:2px; right:4px; border:none; background:none; color:#ef4444; font-weight:800; cursor:pointer; font-size:14px;">✕</button>` : ''}
             <span>${s.date === today ? 'TODAY' : s.date.split('-').slice(1).join('/')}</span>
             <b>${s.member}</b>
+            ${s.items_to_bring ? `<div style="font-size:9px; margin-top:4px; color:#64748b; line-height:1.1; border-top:1px solid #ddd; pt-2px;">${s.items_to_bring}</div>` : ''}
         </div>
     `).join('') : '<p style="grid-column: 1/-1; text-align:center; padding:10px;">No schedule assigned</p>';
 }
@@ -111,13 +117,13 @@ function updateDailyNotification(scheduleData) {
     
     if (todayDuty) {
         alertDiv.style.display = "block";
-        nameEl.innerText = todayDuty.member;
+        nameEl.innerHTML = `${todayDuty.member} ${todayDuty.items_to_bring ? `<br><span style="font-size:12px; font-weight:400; color:#92400e;">🛒 To Bring: ${todayDuty.items_to_bring}</span>` : ''}`;
     } else {
         alertDiv.style.display = "none";
     }
 }
 
-// --- RENDERING LOGIC ---
+// --- REMAINING RENDERING LOGIC ---
 function renderPersonalStats(mList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m)) || "User";
     const count = mList.filter(m => m.member === name).length;
@@ -233,7 +239,6 @@ window.openTab = (n) => {
 };
 window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
 
-// --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
     supabase.auth.onAuthStateChange((event, session) => { 
         if (session) { currentUser = session.user; afterLogin(); } 
@@ -251,14 +256,11 @@ async function afterLogin() {
     isAdmin = (currentUser.email === "admin@mess.com");
     document.getElementById("loginDiv").style.display = "none";
     document.getElementById("appDiv").style.display = "block";
-    
-    const vM = document.getElementById("viewMonth"); 
-    vM.innerHTML = "";
+    const vM = document.getElementById("viewMonth"); vM.innerHTML = "";
     for(let i=0; i<3; i++) {
         let t = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
         vM.innerHTML += `<option value="${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}">${t.toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`;
     }
-
     if (isAdmin) {
         document.getElementById("mealDateContainer").innerHTML = `<input type="date" id="mealDateSource" value="${getToday()}">`;
         document.getElementById("bazarDateContainer").innerHTML = `<input type="date" id="bazarDateSource" value="${getToday()}">`;
@@ -266,16 +268,10 @@ async function afterLogin() {
         document.getElementById("mealDateContainer").innerHTML = `<select id="mealDateSource"><option value="today">Today</option><option value="tomorrow">Tomorrow</option></select>`;
         document.getElementById("bazarDateContainer").innerHTML = `<input type="text" id="bazarDateSource" value="Today" disabled>`;
     }
-
     const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'User'}</option>`;
     document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
-    
-    // Fill the schedule member select
     const scheduleSelect = document.getElementById("scheduleMember");
-    if (scheduleSelect) {
-        scheduleSelect.innerHTML = membersList.map(m => `<option value="${m}">${m}</option>`).join('');
-    }
-
+    if (scheduleSelect) scheduleSelect.innerHTML = membersList.map(m => `<option value="${m}">${m}</option>`).join('');
     if(isAdmin) { 
         document.getElementById("adminTabBtn").style.display = "block"; 
         document.getElementById("adminBillBtn").style.display = "block";
