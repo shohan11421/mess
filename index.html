@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="container">
-        <div id="loginDiv" class="card" style="display:none; max-width:400px; margin: 80px auto;">
+        <div id="loginDiv" class="card" style="display:none; max-width:400px; margin: 50px auto;">
             <h2 style="text-align:center">Mess Login</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
@@ -44,13 +44,13 @@
                                 </select>
                                 <input type="number" id="mealCount" value="1" min="1">
                             </div>
-                            <input type="date" id="mealDate" class="admin-only" style="display:none; margin-bottom:12px;">
+                            <input type="date" id="mealDate" class="admin-only" style="display:none; margin-bottom:10px;">
                             <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                         </div>
                         <div class="card">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
-                                <h3>Meal Log</h3>
-                                <select id="viewMonth" onchange="fetchData()" style="width:auto; padding:5px;"></select>
+                                <h3 style="margin:0">Meal Log</h3>
+                                <select id="viewMonth" onchange="fetchData()" style="width:auto; padding:5px; margin:0"></select>
                             </div>
                             <div class="table-container"><table id="mealCalendar" class="pro-table"></table></div>
                         </div>
@@ -66,9 +66,7 @@
                             </div>
                             <button onclick="addBazar()" class="btn-primary">Save Entry</button>
                         </div>
-                        <div class="admin-layout">
-                            <div id="bazarListContent" style="width:100%"></div>
-                        </div>
+                        <div id="bazarListContent" class="card"></div>
                     </div>
 
                     <div id="summary" class="tab-content">
@@ -77,10 +75,10 @@
 
                     <div id="billsTab" class="tab-content">
                         <div class="card">
-                            <div class="admin-data-header"><h3>Monthly Bill Records</h3></div>
+                            <h3 style="margin-top:0">Personal Bills</h3>
                             <div id="billsContent" class="table-container"></div>
                             <div style="margin-top:15px; display:flex; gap:10px;">
-                                <button onclick="saveMonthlyBills()" class="btn-primary">Save</button>
+                                <button onclick="saveMonthlyBills()" class="btn-primary">Save Records</button>
                                 <button onclick="window.print()" class="btn-primary" style="background:#64748b">Print</button>
                             </div>
                         </div>
