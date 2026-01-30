@@ -286,4 +286,41 @@ async function afterLogin() {
     fetchData();
 }
 
+// Function to handle the Daily Notification
+function updateDailyNotification(scheduleData) {
+    const alertDiv = document.getElementById("bazarAlert");
+    const nameEl = document.getElementById("todayBazarMember");
+    const today = getToday();
+    
+    // Find if anyone is assigned for today
+    const todayDuty = scheduleData.find(s => s.date === today);
+    
+    if (todayDuty) {
+        alertDiv.style.display = "block";
+        nameEl.innerText = todayDuty.member;
+    } else {
+        alertDiv.style.display = "none"; // Hide if no one is assigned
+    }
+}
+
+// Modify your fetchData to handle the notification and schedule list
+const originalFetchData = window.fetchData;
+window.fetchData = async () => {
+    // 1. Run your existing meal/bazar fetches
+    await originalFetchData(); 
+    
+    // 2. Fetch Schedule (Get 7 days worth of data)
+    const { data: schedule } = await supabase
+        .from('bazar_schedule')
+        .select('*')
+        .order('date', { ascending: true });
+
+    // 3. Update the Daily Notification Banner
+    updateDailyNotification(schedule || []);
+    
+    // 4. Update the Schedule Grid (The function we created in the previous step)
+    if (typeof renderBazarSchedule === "function") {
+        renderBazarSchedule(schedule || []);
+    }
+};
 
