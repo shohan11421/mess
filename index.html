@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="container">
-        <div id="loginDiv" class="card login-card" style="display:none;">
+        <div id="loginDiv" class="card login-card" style="display:none; max-width:400px; margin: 80px auto;">
             <h2 style="text-align:center">Mess Login</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
@@ -26,7 +26,7 @@
                 <button class="tab-btn active" onclick="openTab('calendar')">Attendance</button>
                 <button class="tab-btn" onclick="openTab('bazar')">Bazar</button>
                 <button class="tab-btn" onclick="openTab('summary')">Summary</button>
-                <button id="adminBillBtn" class="tab-btn" style="display:none" onclick="openTab('billsTab')">Bills</button>
+                <button id="adminBillBtn" class="tab-btn admin-only" style="display:none" onclick="openTab('billsTab')">Personal Bills</button>
                 <button id="adminTabBtn" class="tab-btn" style="display:none" onclick="openTab('admin')">Admin</button>
             </nav>
 
@@ -34,7 +34,7 @@
                 <div class="card">
                     <h3>Add Meal</h3>
                     <select id="mealMember"></select>
-                    <div class="input-row">
+                    <div class="input-group">
                         <select id="mealDateType" onchange="toggleAdminDate()">
                             <option value="today">Today</option>
                             <option value="tomorrow">Tomorrow</option>
@@ -42,31 +42,37 @@
                         </select>
                         <input type="number" id="mealCount" value="1" min="1">
                     </div>
-                    <input type="date" id="mealDate" class="admin-only" style="display:none;">
+                    <input type="date" id="mealDate" class="admin-only" style="display:none; margin-bottom:12px;">
                     <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                 </div>
                 <div class="card">
-                    <div class="flex-header">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
                         <h3>Meal Log</h3>
-                        <select id="viewMonth" onchange="fetchData()"></select>
+                        <select id="viewMonth" onchange="fetchData()" class="month-picker"></select>
                     </div>
-                    <div class="table-scroll"><table id="mealCalendar" class="pro-table"></table></div>
+                    <div style="overflow-x:auto"><table id="mealCalendar" class="pro-table"></table></div>
                 </div>
             </div>
 
             <div id="bazar" class="tab-content" style="display:none">
                 <div class="card">
-                    <h3>Bazar Entry</h3>
+                    <h3>Add Expense</h3>
                     <select id="bazarMember"></select>
-                    <div class="input-row">
-                        <input type="text" id="bazarItem" placeholder="Item Name">
+                    <div class="input-group">
+                        <input type="text" id="bazarItem" placeholder="Item name">
                         <input type="number" id="bazarPrice" placeholder="Price">
                     </div>
-                    <input type="date" id="bazarDate" class="admin-only" style="display:none;">
-                    <button onclick="addBazar()" class="btn-primary">Add Bazar</button>
+                    <button onclick="addBazar()" class="btn-primary">Save Entry</button>
                 </div>
-                <div id="bazarMemberNav" class="filter-nav"></div>
-                <div id="bazarListContent" class="bazar-list"></div>
+                <div class="admin-layout">
+                    <aside class="admin-sidebar">
+                        <div id="bazarMemberNav" class="member-nav"></div>
+                        <button onclick="filterBazarByMember('ALL')" class="btn-all-list">View All</button>
+                    </aside>
+                    <main class="admin-main">
+                        <div class="card"><div id="bazarListContent" class="admin-scroll"></div></div>
+                    </main>
+                </div>
             </div>
 
             <div id="summary" class="tab-content" style="display:none">
@@ -75,21 +81,25 @@
 
             <div id="billsTab" class="tab-content" style="display:none">
                 <div class="card">
-                    <div class="flex-header">
-                        <h3>Utility & Final Bills</h3>
-                        <button onclick="saveMonthlyBills()" class="btn-primary" style="width:auto; padding:8px 15px; background:#10b981;">Save to Database</button>
+                    <div class="admin-data-header"><h3>Monthly Bill Records</h3></div>
+                    <div id="billsContent" class="table-container" style="overflow-x: auto;"></div>
+                    <div style="margin-top:20px; display:flex; gap:10px;">
+                        <button onclick="saveMonthlyBills()" class="btn-primary">Save All Records</button>
+                        <button onclick="window.print()" class="btn-primary" style="background:#64748b">Print PDF</button>
                     </div>
-                    <div id="billsContent" class="table-scroll"></div>
                 </div>
             </div>
 
             <div id="admin" class="tab-content" style="display:none">
-                <div class="card">
-                    <div id="adminMemberList" class="filter-nav"></div>
-                    <div class="admin-grid">
-                        <div><h4>Meals</h4><table class="pro-table mini"><tbody id="adminMealBody"></tbody></table></div>
-                        <div><h4>Bazar</h4><table class="pro-table mini"><tbody id="adminBazarBody"></tbody></table></div>
-                    </div>
+                <div class="admin-layout">
+                    <aside class="admin-sidebar"><div id="adminMemberList" class="member-nav"></div></aside>
+                    <main class="admin-main">
+                        <h3 id="adminCurrentTitle">Select Member</h3>
+                        <div class="admin-grid-view">
+                            <div class="card"><h4>Meals</h4><div class="admin-scroll"><table class="pro-table"><tbody id="adminMealBody"></tbody></table></div></div>
+                            <div class="card"><h4>Bazar</h4><div class="admin-scroll"><table class="pro-table"><tbody id="adminBazarBody"></tbody></table></div></div>
+                        </div>
+                    </main>
                 </div>
             </div>
         </div>
