@@ -27,3 +27,8 @@ input, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px sol
     .tabs, .dashboard-header, .btn-primary, .admin-sidebar { display: none !important; }
     .card { border: none; }
 }
+#mealCalendar th {
+    padding: 10px 15px;
+    min-width: 80px;
+    font-size: 12px;
+}
