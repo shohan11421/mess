@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mess Manager Pro</title>
+    <title>Engineers_Hub Manager</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <div id="loginDiv" class="card" style="max-width:400px; margin:80px auto; text-align:center; display:none;">
+        <div id="loginDiv" class="card login-card" style="display:none;">
             <h2>Mess Login</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
@@ -19,7 +19,7 @@
         <div id="appDiv" style="display:none">
             <header class="dashboard-header">
                 <div id="personalStats"></div>
-                <button onclick="logout()" class="btn-danger">Logout</button>
+                <button onclick="logout()" class="btn-logout">Logout</button>
             </header>
 
             <nav class="tabs">
@@ -33,17 +33,19 @@
                 <div class="card">
                     <h3>Add Meal</h3>
                     <select id="mealMember"></select>
-                    <select id="mealDateType" onchange="toggleAdminDate()">
-                        <option value="today">Today</option>
-                        <option value="tomorrow">Tomorrow</option>
-                        <option value="custom" class="admin-only" style="display:none">Custom Date</option>
-                    </select>
-                    <input type="date" id="mealDate" class="admin-only" style="display:none; margin-top:10px;">
-                    <input type="number" id="mealCount" value="1" min="1">
+                    <div class="input-group">
+                        <select id="mealDateType" onchange="toggleAdminDate()">
+                            <option value="today">Today</option>
+                            <option value="tomorrow">Tomorrow</option>
+                            <option value="custom" class="admin-only" style="display:none">Custom Date</option>
+                        </select>
+                        <input type="number" id="mealCount" value="1" min="1">
+                    </div>
+                    <input type="date" id="mealDate" class="admin-only" style="display:none; margin-bottom:12px;">
                     <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                 </div>
                 <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+                    <div class="flex-between">
                         <h3>Meal Log</h3>
                         <select id="viewMonth" onchange="fetchData()" class="month-picker"></select>
                     </div>
@@ -52,7 +54,6 @@
             </div>
 
             <div id="bazar" class="tab-content" style="display:none">
-                <div id="bazarStats" class="bazar-stats-grid"></div>
                 <div class="card">
                     <h3>Add New Expense</h3>
                     <select id="bazarMember"></select>
@@ -71,39 +72,31 @@
                     </aside>
                     <main class="admin-main">
                         <div class="admin-data-header"><h3 id="bazarCurrentViewTitle">Expense List</h3></div>
-                        <div class="card"><div id="bazarListContent" class="admin-scroll"></div></div>
+                        <div class="card" style="padding:10px;"><div id="bazarListContent" class="admin-scroll"></div></div>
                     </main>
                 </div>
             </div>
 
             <div id="summary" class="tab-content" style="display:none">
-                <div id="summaryContent" class="card" style="padding:0"></div>
+                <div id="summaryContent"></div>
             </div>
 
             <div id="admin" class="tab-content" style="display:none">
                 <div class="admin-layout">
                     <aside class="admin-sidebar">
-                        <h4>Manage Members</h4>
+                        <h4>Manage</h4>
                         <div id="adminMemberList" class="member-nav"></div>
                     </aside>
                     <main class="admin-main">
-                        <div id="adminDataHeader" class="admin-data-header">
-                            <h3 id="adminCurrentTitle">Select a member to edit</h3>
-                        </div>
+                        <div id="adminDataHeader" class="admin-data-header"><h3>Admin Panel</h3></div>
                         <div class="admin-grid-view">
                             <div class="card">
-                                <h4>Meal Adjustments</h4>
-                                <div class="admin-scroll"><table class="pro-table">
-                                    <thead><tr><th>Date</th><th>Qty</th><th>Action</th></tr></thead>
-                                    <tbody id="adminMealBody"></tbody>
-                                </table></div>
+                                <h4>Meals</h4>
+                                <div class="admin-scroll"><table class="pro-table mini"><tbody id="adminMealBody"></tbody></table></div>
                             </div>
                             <div class="card">
-                                <h4>Bazar Adjustments</h4>
-                                <div class="admin-scroll"><table class="pro-table">
-                                    <thead><tr><th>Item</th><th>Price</th><th>Action</th></tr></thead>
-                                    <tbody id="adminBazarBody"></tbody>
-                                </table></div>
+                                <h4>Bazar</h4>
+                                <div class="admin-scroll"><table class="pro-table mini"><tbody id="adminBazarBody"></tbody></table></div>
                             </div>
                         </div>
                     </main>
