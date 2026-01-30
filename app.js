@@ -1,109 +1,124 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engineers_Hub Mess Pro</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <div id="loginDiv" class="card login-card" style="display:none; max-width:400px; margin: 80px auto;">
-            <h2 style="text-align:center">Mess Login</h2>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <button id="loginBtn" class="btn-primary">Sign In</button>
-        </div>
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-        <div id="appDiv" style="display:none">
-            <header class="dashboard-header">
-                <div id="personalStats"></div>
-                <button onclick="logout()" class="btn-logout">Logout</button>
-            </header>
+const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co';
+const supabaseKey = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ"; 
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-            <nav class="tabs">
-                <button class="tab-btn active" onclick="openTab('calendar')">Attendance</button>
-                <button class="tab-btn" onclick="openTab('bazar')">Bazar</button>
-                <button class="tab-btn" onclick="openTab('summary')">Summary</button>
-                <button id="adminBillBtn" class="tab-btn admin-only" style="display:none" onclick="openTab('billsTab')">Personal Bills</button>
-                <button id="adminTabBtn" class="tab-btn" style="display:none" onclick="openTab('admin')">Admin</button>
-            </nav>
+const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "SHOJIB", "MASUM"]; 
+let currentUser = null, isAdmin = false, selectedAdminMember = null, selectedBazarMember = null;
 
-            <div id="calendar" class="tab-content">
-                <div class="card">
-                    <h3>Add Meal</h3>
-                    <select id="mealMember"></select>
-                    <div class="input-group">
-                        <select id="mealDateType" onchange="toggleAdminDate()">
-                            <option value="today">Today</option>
-                            <option value="tomorrow">Tomorrow</option>
-                            <option value="custom" class="admin-only" style="display:none">Custom Date</option>
-                        </select>
-                        <input type="number" id="mealCount" value="1" min="1">
-                    </div>
-                    <input type="date" id="mealDate" class="admin-only" style="display:none; margin-bottom:12px;">
-                    <button onclick="addMeal()" class="btn-primary">Save Meal</button>
-                </div>
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                        <h3>Meal Log</h3>
-                        <select id="viewMonth" onchange="fetchData()" class="month-picker"></select>
-                    </div>
-                    <div style="overflow-x:auto"><table id="mealCalendar" class="pro-table"></table></div>
-                </div>
-            </div>
+const getToday = () => new Date().toLocaleDateString('en-CA');
+const getTomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toLocaleDateString('en-CA'); };
 
-            <div id="bazar" class="tab-content" style="display:none">
-                <div class="card">
-                    <h3>Add Expense</h3>
-                    <select id="bazarMember"></select>
-                    <div class="input-group">
-                        <input type="text" id="bazarItem" placeholder="Item name">
-                        <input type="number" id="bazarPrice" placeholder="Price">
-                    </div>
-                    <button onclick="addBazar()" class="btn-primary">Save Entry</button>
-                </div>
-                <div class="admin-layout">
-                    <aside class="admin-sidebar">
-                        <div id="bazarMemberNav" class="member-nav"></div>
-                        <button onclick="filterBazarByMember('ALL')" class="btn-all-list">View All</button>
-                    </aside>
-                    <main class="admin-main">
-                        <div class="card"><div id="bazarListContent" class="admin-scroll"></div></div>
-                    </main>
-                </div>
-            </div>
+window.fetchData = async () => {
+    const monthVal = document.getElementById("viewMonth").value;
+    if (!monthVal) return;
+    const [year, mon] = monthVal.split('-').map(Number);
+    const firstDay = `${monthVal}-01`, lastDay = `${monthVal}-${new Date(year, mon, 0).getDate()}`;
 
-            <div id="summary" class="tab-content" style="display:none">
-                <div id="summaryContent"></div>
-            </div>
+    const { data: meals } = await supabase.from('meals').select('*').gte('date', firstDay).lte('date', lastDay);
+    const { data: bazar } = await supabase.from('bazar').select('*').gte('date', firstDay).lte('date', lastDay);
+    const { data: savedBills } = await supabase.from('monthly_bills').select('*').eq('month', monthVal);
+    
+    renderPersonalStats(meals || []);
+    renderCalendar(meals || [], monthVal);
+    renderSummary(meals || [], bazar || []);
+    renderBazarList(bazar || []);
+    renderBillsTab(meals || [], bazar || [], savedBills || []);
+    if(isAdmin) renderAdmin(meals || [], bazar || []);
+};
 
-            <div id="billsTab" class="tab-content" style="display:none">
-                <div class="card">
-                    <div class="admin-data-header"><h3>Monthly Bill Records</h3></div>
-                    <div id="billsContent" class="table-container" style="overflow-x: auto;"></div>
-                    <div style="margin-top:20px; display:flex; gap:10px;">
-                        <button onclick="saveMonthlyBills()" class="btn-primary">Save All Records</button>
-                        <button onclick="window.print()" class="btn-primary" style="background:#64748b">Print PDF</button>
-                    </div>
-                </div>
-            </div>
+window.calcPersonalBill = (m, mealBalance) => {
+    const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
+    const billsTotal = fields.reduce((sum, f) => sum + (Number(document.getElementById(`${f}-${m}`).value) || 0), 0);
+    const final = billsTotal - mealBalance;
+    const target = document.getElementById(`final-${m}`);
+    target.innerText = final.toFixed(2) + "৳";
+    target.style.color = final > 0 ? "#ef4444" : "#10b981";
+};
 
-            <div id="admin" class="tab-content" style="display:none">
-                <div class="admin-layout">
-                    <aside class="admin-sidebar"><div id="adminMemberList" class="member-nav"></div></aside>
-                    <main class="admin-main">
-                        <h3 id="adminCurrentTitle">Select Member</h3>
-                        <div class="admin-grid-view">
-                            <div class="card"><h4>Meals</h4><div class="admin-scroll"><table class="pro-table"><tbody id="adminMealBody"></tbody></table></div></div>
-                            <div class="card"><h4>Bazar</h4><div class="admin-scroll"><table class="pro-table"><tbody id="adminBazarBody"></tbody></table></div></div>
-                        </div>
-                    </main>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script type="module" src="app.js"></script>
-</body>
-</html>
+window.saveMonthlyBills = async () => {
+    const month = document.getElementById("viewMonth").value;
+    const updates = membersList.map(m => {
+        const mealBal = Number(document.getElementById(`status-val-${m}`).innerText) || 0;
+        return {
+            month, member: m,
+            rent: Number(document.getElementById(`rent-${m}`).value) || 0,
+            wifi: Number(document.getElementById(`wifi-${m}`).value) || 0,
+            gas: Number(document.getElementById(`gas-${m}`).value) || 0,
+            elec: Number(document.getElementById(`elec-${m}`).value) || 0,
+            khala: Number(document.getElementById(`khala-${m}`).value) || 0,
+            meal_balance: mealBal,
+            total_payable: parseFloat(document.getElementById(`final-${m}`).innerText)
+        };
+    });
+    const { error } = await supabase.from('monthly_bills').upsert(updates, { onConflict: 'month,member' });
+    alert(error ? "Error: " + error.message : "Bills Saved Successfully!");
+};
+
+function renderBillsTab(mList, bList, savedBills) {
+    const totalBazar = bList.reduce((s, b) => s + b.price, 0);
+    const rate = mList.length ? (totalBazar / mList.length) : 0;
+    let html = `<table class="summary-table"><thead><tr><th>Member</th><th>Rent</th><th>Wifi</th><th>Gas</th><th>Elec</th><th>Khala</th><th>Meal Bal</th><th>Total</th></tr></thead><tbody>`;
+
+    membersList.forEach(m => {
+        const meals = mList.filter(ml => ml.member === m).length;
+        const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
+        const bal = Number((paid - (meals * rate)).toFixed(2));
+        const s = savedBills.find(sb => sb.member === m) || {};
+
+        html += `<tr><td class="name-cell">${m}</td>
+            <td><input type="number" id="rent-${m}" value="${s.rent || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
+            <td><input type="number" id="wifi-${m}" value="${s.wifi || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
+            <td><input type="number" id="gas-${m}" value="${s.gas || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
+            <td><input type="number" id="elec-${m}" value="${s.elec || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
+            <td><input type="number" id="khala-${m}" value="${s.khala || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
+            <td style="font-weight:bold; color:${bal>=0?'#10b981':'#ef4444'}"><span id="status-val-${m}">${bal}</span></td>
+            <td id="final-${m}" style="font-weight:900;">${s.total_payable || '0.00'}৳</td></tr>`;
+    });
+    document.getElementById("billsContent").innerHTML = html + "</tbody></table>";
+}
+
+// ... existing renderPersonalStats, renderSummary, renderBazarList, renderCalendar, renderAdmin ...
+// (Keep those from your previous code)
+
+window.openTab = (n) => { 
+    document.querySelectorAll(".tab-content").forEach(c => c.style.display="none"); 
+    document.getElementById(n).style.display="block"; 
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    event.currentTarget.classList.add("active");
+};
+
+window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
+
+document.addEventListener('DOMContentLoaded', () => {
+    supabase.auth.onAuthStateChange((event, session) => { 
+        if (session) { currentUser = session.user; afterLogin(); } 
+        else { document.getElementById("loginDiv").style.display = "block"; }
+    });
+    document.getElementById("loginBtn").onclick = async () => { 
+        await supabase.auth.signInWithPassword({ 
+            email: document.getElementById("email").value, 
+            password: document.getElementById("password").value 
+        }); 
+    };
+});
+
+async function afterLogin() {
+    isAdmin = (currentUser.email === "admin@mess.com");
+    document.getElementById("loginDiv").style.display = "none";
+    document.getElementById("appDiv").style.display = "block";
+    const vM = document.getElementById("viewMonth"); vM.innerHTML = "";
+    for(let i=0; i<3; i++) {
+        let t = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
+        vM.innerHTML += `<option value="${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}">${t.toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`;
+    }
+    const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'User'}</option>`;
+    document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
+    if(isAdmin) { 
+        document.getElementById("adminTabBtn").style.display = "block"; 
+        document.getElementById("adminBillBtn").style.display = "block";
+        document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); 
+    }
+    fetchData();
+}
