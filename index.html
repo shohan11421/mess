@@ -67,8 +67,17 @@
                             </div>
                             <button onclick="addBazar()" class="btn-primary">Save Entry</button>
                         </div>
-                        <div class="card">
-                            <div id="bazarListContent"></div>
+                        <div class="admin-layout">
+                            <aside class="admin-sidebar">
+                                <div id="bazarMemberNav" class="member-nav"></div>
+                                <button onclick="filterBazarByMember('ALL')" class="btn-all-list" style="margin-top:10px">View All</button>
+                            </aside>
+                            <main class="admin-main">
+                                <div class="card">
+                                    <h4 id="bazarFilterTitle" style="margin:0 0 10px 0; font-size:12px; color:var(--accent)">All Expenses</h4>
+                                    <div id="bazarListContent" class="admin-scroll"></div>
+                                </div>
+                            </main>
                         </div>
                     </div>
 
@@ -78,7 +87,7 @@
 
                     <div id="billsTab" class="tab-content">
                         <div class="card">
-                            <h3 style="margin-top:0">Personal Bills</h3>
+                            <h3 style="margin-top:0">Monthly Bills</h3>
                             <div id="billsContent" class="table-container"></div>
                             <div style="margin-top:15px; display:flex; gap:10px;">
                                 <button onclick="saveMonthlyBills()" class="btn-primary">Save Records</button>
@@ -94,8 +103,8 @@
                             </aside>
                             <main class="admin-main">
                                 <div class="sub-grid">
-                                    <div class="card"><h4>Meals</h4><div id="adminMealBody"></div></div>
-                                    <div class="card"><h4>Bazar</h4><div id="adminBazarBody"></div></div>
+                                    <div class="card"><h4>Meals</h4><div id="adminMealBody" class="admin-scroll"></div></div>
+                                    <div class="card"><h4>Bazar</h4><div id="adminBazarBody" class="admin-scroll"></div></div>
                                 </div>
                             </main>
                         </div>
