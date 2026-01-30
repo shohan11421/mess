@@ -105,6 +105,36 @@
                                 <div class="admin-scroll"><table class="pro-table mini-table"><tbody id="adminBazarBody"></tbody></table></div>
                             </div>
                         </div>
+                        <div class="card admin-card" style="margin-top: 20px; border-top: 4px solid #10b981;">
+    <div class="card-header"><h4>Utilities & Rent (Fixed Costs)</h4></div>
+    <div class="input-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px;">
+        <input type="number" id="rent" placeholder="Room Rent">
+        <input type="number" id="wifi" placeholder="Wifi Bill">
+        <input type="number" id="gas" placeholder="Gas Bill">
+        <input type="number" id="electricity" placeholder="Electricity">
+        <input type="number" id="khala" placeholder="Khala Bill">
+    </div>
+    <button onclick="calculateFinalSettlement()" class="btn-primary" style="background: #10b981;">Calculate Final Dues</button>
+</div>
+
+<div id="settlementSection" class="card" style="display:none; margin-top: 20px; border: 2px solid #10b981; padding: 0; overflow: hidden;">
+    <div class="admin-data-header" style="background: #059669; border-radius: 0;">
+        <h3 style="color: white; margin: 0;">Final Monthly Settlement</h3>
+    </div>
+    <div style="overflow-x:auto">
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th style="text-align:left; padding-left:15px;">MEMBER</th>
+                    <th>FIXED (A)</th>
+                    <th>MEAL BAL (B)</th>
+                    <th>FINAL PAY</th>
+                </tr>
+            </thead>
+            <tbody id="settlementBody"></tbody>
+        </table>
+    </div>
+</div>
                     </main>
                 </div>
             </div>
@@ -113,3 +143,4 @@
     <script type="module" src="app.js"></script>
 </body>
 </html>
+
