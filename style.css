@@ -143,3 +143,18 @@ input, select { width: 100%; padding: 12px; border: 1px solid var(--border); bor
         overflow-x: auto;
     }
 }
+/* Remove the up/down arrows (spinners) from number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+.mini-input {
+    text-align: center; /* Centers the number inside the box */
+    appearance: textfield; /* Extra layer of protection against arrows */
+}
