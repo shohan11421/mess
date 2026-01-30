@@ -147,4 +147,47 @@ async function afterLogin() {
     if(isAdmin) { document.getElementById("adminTabBtn").style.display = "block"; document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); }
     fetchData();
 }
+window.calculateFinalSettlement = () => {
+    // 1. Gather Inputs
+    const rent = Number(document.getElementById('rent').value) || 0;
+    const wifi = Number(document.getElementById('wifi').value) || 0;
+    const gas = Number(document.getElementById('gas').value) || 0;
+    const electricity = Number(document.getElementById('electricity').value) || 0;
+    const khala = Number(document.getElementById('khala').value) || 0;
+
+    const totalFixed = rent + wifi + gas + electricity + khala;
+    const perHeadFixed = totalFixed / membersList.length;
+
+    // 2. Read existing Status from the Summary Table already on screen
+    const summaryRows = document.querySelectorAll("#summaryContent table tbody tr");
+    let html = "";
+
+    summaryRows.forEach(row => {
+        const name = row.cells[0].innerText;
+        // Extract number from status (e.g., "+500৳" -> 500 or "-200৳" -> -200)
+        const statusVal = parseFloat(row.cells[4].innerText.replace('৳', ''));
+
+        // MATH: If they have +500 (extra paid), it is deducted from their fixed cost
+        // If they have -200 (owing), it is added to their fixed cost
+        const finalPayable = perHeadFixed - statusVal;
+
+        html += `
+            <tr>
+                <td class="name-cell">${name}</td>
+                <td style="text-align:center">${perHeadFixed.toFixed(0)}৳</td>
+                <td style="text-align:center; color:${statusVal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold;">
+                    ${statusVal > 0 ? '+' : ''}${statusVal.toFixed(0)}৳
+                </td>
+                <td style="text-align:center; font-size:16px; font-weight:800; color:#1e293b; background:#f0fdf4;">
+                    ${finalPayable.toFixed(0)}৳
+                </td>
+            </tr>`;
+    });
+
+    document.getElementById("settlementBody").innerHTML = html;
+    document.getElementById("settlementSection").style.display = "block";
+    
+    // Smooth scroll to results
+    document.getElementById("settlementSection").scrollIntoView({ behavior: 'smooth' });
+};
 
