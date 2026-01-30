@@ -55,3 +55,13 @@ input, select { width: 100%; padding: 12px; border: 1px solid var(--border); bor
     .member-nav button { width: auto; white-space: nowrap; margin-bottom: 0; }
     .admin-grid-view { grid-template-columns: 1fr; }
 }
+@media (max-width: 600px) {
+    .input-grid {
+        grid-template-columns: 1fr !important; /* Stack inputs vertically on mobile */
+    }
+}
+
+#settlementBody tr td {
+    padding: 15px 5px;
+    border-bottom: 1px solid #f1f5f9;
+}
