@@ -1,14 +1,16 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
+// --- CONFIGURATION ---
 const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co';
 const supabaseKey = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ"; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "MASUM"]; // Add new members here
+const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "MASUM"]; 
 let currentUser = null;
 let isAdmin = false;
 let selectedAdminMember = null;
 
+// --- UTILITIES ---
 const getToday = () => new Date().toLocaleDateString('en-CA');
 const getTomorrow = () => {
     const d = new Date();
@@ -25,6 +27,7 @@ const showStatus = (msg, isError = false) => {
     setTimeout(() => statusEl.remove(), 3000);
 };
 
+// --- DATA FETCHING ---
 window.fetchData = async () => {
     const vMonth = document.getElementById("viewMonth");
     if (!vMonth || !vMonth.value) return;
@@ -45,6 +48,7 @@ window.fetchData = async () => {
     if(isAdmin) renderAdmin(meals || [], bazar || []);
 };
 
+// --- RENDER FUNCTIONS ---
 function renderPersonalDashboard(mList) {
     const userEmail = currentUser.email.toUpperCase();
     const memberName = membersList.find(m => userEmail.includes(m)) || "User";
@@ -86,7 +90,7 @@ function renderGlobalBazarList(bList) {
         <div class="bazar-item"><span>${b.date} - <b>${b.member}</b> (${b.item})</span><b>${b.price}৳</b></div>`).join('');
 }
 
-// --- NEW ADMIN RENDER ---
+// --- GROUPED ADMIN RENDER ---
 function renderAdmin(meals, bazar) {
     const listEl = document.getElementById("adminMemberList");
     listEl.innerHTML = membersList.map(m => `
@@ -95,22 +99,56 @@ function renderAdmin(meals, bazar) {
 
     if (!selectedAdminMember) return;
 
+    // Group Meals by Date
     const filteredMeals = meals.filter(m => m.member === selectedAdminMember);
-    const filteredBazar = bazar.filter(b => b.member === selectedAdminMember);
+    const groupedMeals = filteredMeals.reduce((acc, curr) => {
+        if (!acc[curr.date]) acc[curr.date] = { date: curr.date, count: 0 };
+        acc[curr.date].count++;
+        return acc;
+    }, {});
 
     document.getElementById("adminDataHeader").innerHTML = `<h3>Managing: ${selectedAdminMember}</h3>`;
 
-    document.getElementById("adminMealBody").innerHTML = filteredMeals.reverse().map(m => `
-        <tr><td>${m.date}</td><td><button class="btn-del" onclick="del('meals','${m.id}')">✕</button></td></tr>
-    `).join('') || '<tr><td>No records</td></tr>';
+    // Render Grouped Meals
+    document.getElementById("adminMealBody").innerHTML = Object.values(groupedMeals)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .map(g => `
+        <tr>
+            <td style="text-align:left">${g.date}</td>
+            <td><b>${g.count}</b></td>
+            <td>
+                <button class="btn-del" onclick="adjustMeal('${selectedAdminMember}', '${g.date}', -1)">−</button>
+                <button class="btn-add" onclick="adjustMeal('${selectedAdminMember}', '${g.date}', 1)">+</button>
+            </td>
+        </tr>`).join('') || '<tr><td colspan="3">No records</td></tr>';
 
+    // Render Bazar List
+    const filteredBazar = bazar.filter(b => b.member === selectedAdminMember);
     document.getElementById("adminBazarBody").innerHTML = filteredBazar.reverse().map(b => `
-        <tr><td>${b.item} (${b.price}৳)</td><td><button class="btn-del" onclick="del('bazar','${b.id}')">✕</button></td></tr>
-    `).join('') || '<tr><td>No records</td></tr>';
+        <tr>
+            <td style="text-align:left">${b.item} (${b.date})</td>
+            <td><b>${b.price}৳</b></td>
+            <td><button class="btn-del" onclick="del('bazar','${b.id}')">✕</button></td>
+        </tr>`).join('') || '<tr><td colspan="3">No records</td></tr>';
 }
 
+// --- ACTIONS ---
 window.filterAdminByMember = (name) => {
     selectedAdminMember = name;
+    fetchData();
+};
+
+window.adjustMeal = async (member, date, change) => {
+    if (change === 1) {
+        await supabase.from('meals').insert([{ member, date, added_by: currentUser.id }]);
+        showStatus("Added 1 meal");
+    } else {
+        const { data } = await supabase.from('meals').select('id').eq('member', member).eq('date', date).limit(1);
+        if (data && data.length > 0) {
+            await supabase.from('meals').delete().eq('id', data[0].id);
+            showStatus("Removed 1 meal");
+        }
+    }
     fetchData();
 };
 
@@ -122,7 +160,7 @@ window.addMeal = async () => {
 
     const entries = Array.from({length: count}, () => ({ member, date, added_by: currentUser.id }));
     const { error } = await supabase.from('meals').insert(entries);
-    if(!error) { showStatus(`Added ${count} meal(s) for ${date}`); fetchData(); }
+    if(!error) { showStatus(`Added ${count} meal(s)`); fetchData(); }
 };
 
 window.addBazar = async () => {
@@ -138,14 +176,16 @@ window.toggleAdminDate = () => {
     document.getElementById("mealDate").style.display = (type === 'custom') ? 'block' : 'none';
 };
 
-window.del = async (t, id) => { if(confirm("Delete?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
+window.del = async (t, id) => { if(confirm("Delete record?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
 window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
+
 window.openTab = (n) => {
     document.querySelectorAll(".tab-content").forEach(c => c.style.display="none");
     document.getElementById(n).style.display="block";
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
 };
 
+// --- AUTH & INIT ---
 async function afterLogin() {
     isAdmin = (currentUser.email === "admin@mess.com");
     document.getElementById("loginDiv").style.display = "none";
