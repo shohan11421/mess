@@ -7,6 +7,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR","SHOJIB", "MASUM"]; 
 let currentUser = null, isAdmin = false, selectedAdminMember = null, selectedBazarMember = null;
 
+let isSettlementVisible = false;
+
 const getToday = () => new Date().toLocaleDateString('en-CA');
 const getTomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toLocaleDateString('en-CA'); };
 
@@ -147,47 +149,47 @@ async function afterLogin() {
     if(isAdmin) { document.getElementById("adminTabBtn").style.display = "block"; document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); }
     fetchData();
 }
-window.calculateFinalSettlement = () => {
-    // 1. Gather Inputs
-    const rent = Number(document.getElementById('rent').value) || 0;
-    const wifi = Number(document.getElementById('wifi').value) || 0;
-    const gas = Number(document.getElementById('gas').value) || 0;
-    const electricity = Number(document.getElementById('electricity').value) || 0;
-    const khala = Number(document.getElementById('khala').value) || 0;
 
-    const totalFixed = rent + wifi + gas + electricity + khala;
-    const perHeadFixed = totalFixed / membersList.length;
 
-    // 2. Read existing Status from the Summary Table already on screen
-    const summaryRows = document.querySelectorAll("#summaryContent table tbody tr");
-    let html = "";
-
-    summaryRows.forEach(row => {
-        const name = row.cells[0].innerText;
-        // Extract number from status (e.g., "+500৳" -> 500 or "-200৳" -> -200)
-        const statusVal = parseFloat(row.cells[4].innerText.replace('৳', ''));
-
-        // MATH: If they have +500 (extra paid), it is deducted from their fixed cost
-        // If they have -200 (owing), it is added to their fixed cost
-        const finalPayable = perHeadFixed - statusVal;
-
-        html += `
-            <tr>
-                <td class="name-cell">${name}</td>
-                <td style="text-align:center">${perHeadFixed.toFixed(0)}৳</td>
-                <td style="text-align:center; color:${statusVal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold;">
-                    ${statusVal > 0 ? '+' : ''}${statusVal.toFixed(0)}৳
-                </td>
-                <td style="text-align:center; font-size:16px; font-weight:800; color:#1e293b; background:#f0fdf4;">
-                    ${finalPayable.toFixed(0)}৳
-                </td>
-            </tr>`;
-    });
-
-    document.getElementById("settlementBody").innerHTML = html;
-    document.getElementById("settlementSection").style.display = "block";
-    
-    // Smooth scroll to results
-    document.getElementById("settlementSection").scrollIntoView({ behavior: 'smooth' });
+window.toggleSettlement = () => {
+    isSettlementVisible = !isSettlementVisible;
+    const btn = document.getElementById("publishBtn");
+    btn.innerText = `Show Final Settlement: ${isSettlementVisible ? 'ON' : 'OFF'}`;
+    btn.style.background = isSettlementVisible ? "#10b981" : "#f59e0b";
+    renderFinalSettlement(); 
 };
 
+window.renderFinalSettlement = () => {
+    const wrapper = document.getElementById("finalSettlementWrapper");
+    if (isAdmin || isSettlementVisible) {
+        wrapper.style.display = "block";
+        const summaryRows = document.querySelectorAll("#summaryContent table tbody tr");
+        let html = "";
+        summaryRows.forEach((row, index) => {
+            const name = row.cells[0].innerText;
+            const mealBal = parseFloat(row.cells[4].innerText.replace('৳', ''));
+            html += `
+                <tr>
+                    <td class="name-cell">${name}</td>
+                    <td style="text-align:center; color:${mealBal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">
+                        ${mealBal >= 0 ? '+' : ''}${mealBal}৳
+                    </td>
+                    <td contenteditable="${isAdmin}" class="${isAdmin ? 'editable-bill' : ''}" 
+                        id="other-${index}" oninput="calcNet(${index}, ${mealBal})" style="text-align:center;">0</td>
+                    <td id="net-${index}" style="text-align:center; font-weight:800; background:#f0fdf4;">
+                        ${(0 - mealBal).toFixed(0)}৳
+                    </td>
+                </tr>`;
+        });
+        document.getElementById("finalSettlementBody").innerHTML = html;
+    } else {
+        wrapper.style.display = "none";
+    }
+};
+
+window.calcNet = (idx, mealBal) => {
+    const otherBill = parseFloat(document.getElementById(`other-${idx}`).innerText) || 0;
+    const netCell = document.getElementById(`net-${idx}`);
+    const net = otherBill - mealBal;
+    netCell.innerText = net.toFixed(0) + "৳";
+};
