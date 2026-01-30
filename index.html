@@ -26,6 +26,10 @@
                 <button class="tab-btn active" onclick="openTab('calendar')">Attendance</button>
                 <button class="tab-btn" onclick="openTab('bazar')">Bazar</button>
                 <button class="tab-btn" onclick="openTab('summary')">Summary</button>
+                <button class="tab-btn admin-only" style="display:none"
+        onclick="openTab('monthlyCost')">
+    Individual Monthly Cost
+</button>
                 <button id="adminTabBtn" class="tab-btn" style="display:none" onclick="openTab('admin')">Admin</button>
             </nav>
 
@@ -108,8 +112,45 @@
                     </main>
                 </div>
             </div>
+            <div id="monthlyCost" class="tab-content" style="display:none">
+    <div class="card">
+        <h3>Individual Monthly Cost</h3>
+
+        <div class="input-group">
+            <input type="number" id="rentCost" placeholder="Rent">
+            <input type="number" id="gasCost" placeholder="Gas">
+        </div>
+        <div class="input-group">
+            <input type="number" id="electricityCost" placeholder="Electricity">
+            <input type="number" id="wifiCost" placeholder="WiFi">
+        </div>
+        <input type="number" id="khalaCost" placeholder="Khala">
+
+        <button onclick="calculateMonthlyCost()" class="btn-primary">
+            Calculate Monthly Cost
+        </button>
+    </div>
+
+    <div class="card">
+        <div style="overflow-x:auto">
+            <table class="pro-table">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Meal Balance</th>
+                        <th>Extra Cost</th>
+                        <th>Final Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="monthlyCostBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
         </div>
     </div>
     <script type="module" src="app.js"></script>
 </body>
 </html>
+
