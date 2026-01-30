@@ -422,3 +422,53 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
+/* --- COMPACT MOBILE VIEW (NO SLIDING) --- */
+@media (max-width: 600px) {
+    /* Gain extra width by reducing container and card padding */
+    body { padding: 4px; }
+    .card { padding: 12px 8px; }
+
+    /* Force the Meal Log table to fit 100% of the screen */
+    #mealCalendar {
+        display: table !important; 
+        table-layout: fixed; /* Crucial: Forces columns to share the screen */
+        width: 100% !important;
+        min-width: unset !important;
+        border-spacing: 0;
+    }
+
+    /* Adjust header names to be compact and professional */
+    #mealCalendar th {
+        font-size: 9px !important; /* Smaller but readable */
+        padding: 8px 1px !important;
+        text-transform: capitalize; /* "Shohan" instead of "SHOHAN" saves space */
+        letter-spacing: -0.2px;
+        word-wrap: break-word;
+        white-space: normal !important;
+        border-bottom: 2px solid var(--border);
+    }
+
+    /* Center the meal counts under the names */
+    #mealCalendar td {
+        font-size: 11px !important;
+        padding: 6px 0 !important;
+        text-align: center !important;
+        min-width: unset !important;
+    }
+
+    /* Make the 'Day' column significantly smaller */
+    #mealCalendar th:first-child, 
+    #mealCalendar td:first-child {
+        width: 28px !important;
+        background: #f8fafc;
+        font-weight: 700;
+        position: static !important; /* Disables sticky for the one-page fit */
+    }
+
+    /* Adjust Bazar filter buttons for mobile */
+    .member-nav button {
+        padding: 6px 8px;
+        font-size: 10px;
+    }
+}
