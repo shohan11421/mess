@@ -226,3 +226,27 @@ input, select {
     .member-nav button { width: auto; white-space: nowrap; margin-bottom: 0; }
     .dashboard-header { flex-direction: column; gap: 10px; text-align: center; }
 }
+/* Restores the grid lines seen in image 2 */
+.pro-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 10px;
+    background: white;
+}
+
+.pro-table th { 
+    padding: 12px 8px; 
+    font-size: 11px; 
+    background: #f8fafc; /* Light blue header background */
+    border-bottom: 2px solid #e2e8f0; 
+    color: #64748b; 
+    text-align: center;
+}
+
+.pro-table td { 
+    padding: 12px 8px; 
+    border-bottom: 1px solid #f1f5f9; /* The horizontal lines */
+    font-size: 13px; 
+    text-align: center;
+    color: #334155;
+}
