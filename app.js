@@ -4,9 +4,10 @@ const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co';
 const supabaseKey = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ"; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "SHOJIB", "MASUM"];
+const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "MASUM"]; // Add new members here
 let currentUser = null;
 let isAdmin = false;
+let selectedAdminMember = null;
 
 const getToday = () => new Date().toLocaleDateString('en-CA');
 const getTomorrow = () => {
@@ -15,7 +16,6 @@ const getTomorrow = () => {
     return d.toLocaleDateString('en-CA');
 };
 
-// Status Notification UI
 const showStatus = (msg, isError = false) => {
     const statusEl = document.createElement('div');
     statusEl.className = 'status-popup';
@@ -25,10 +25,9 @@ const showStatus = (msg, isError = false) => {
     setTimeout(() => statusEl.remove(), 3000);
 };
 
-// --- DATA FETCHING ---
 window.fetchData = async () => {
     const vMonth = document.getElementById("viewMonth");
-    if (!vMonth || !vMonth.value || vMonth.value === "Invalid Date") return;
+    if (!vMonth || !vMonth.value) return;
     
     const monthVal = vMonth.value;
     const [year, mon] = monthVal.split('-').map(Number);
@@ -83,57 +82,55 @@ function renderSummary(mList, bList) {
 }
 
 function renderGlobalBazarList(bList) {
-    document.getElementById("bazarList").innerHTML = `<h3>All Bazar Records</h3>` + bList.reverse().map(b => `
+    document.getElementById("bazarList").innerHTML = `<h3>Recent Bazar</h3>` + bList.slice(-10).reverse().map(b => `
         <div class="bazar-item"><span>${b.date} - <b>${b.member}</b> (${b.item})</span><b>${b.price}৳</b></div>`).join('');
 }
 
+// --- NEW ADMIN RENDER ---
 function renderAdmin(meals, bazar) {
-    document.getElementById("adminMealBody").innerHTML = meals.map(m => `<tr><td>${m.date}</td><td>${m.member}</td><td><button class="btn-del" onclick="del('meals','${m.id}')">Del</button></td></tr>`).join('');
-    document.getElementById("adminBazarBody").innerHTML = bazar.map(b => `<tr><td>${b.item}</td><td>${b.price}৳</td><td><button class="btn-del" onclick="del('bazar','${b.id}')">Del</button></td></tr>`).join('');
+    const listEl = document.getElementById("adminMemberList");
+    listEl.innerHTML = membersList.map(m => `
+        <button class="${selectedAdminMember === m ? 'active' : ''}" onclick="filterAdminByMember('${m}')">${m}</button>
+    `).join('');
+
+    if (!selectedAdminMember) return;
+
+    const filteredMeals = meals.filter(m => m.member === selectedAdminMember);
+    const filteredBazar = bazar.filter(b => b.member === selectedAdminMember);
+
+    document.getElementById("adminDataHeader").innerHTML = `<h3>Managing: ${selectedAdminMember}</h3>`;
+
+    document.getElementById("adminMealBody").innerHTML = filteredMeals.reverse().map(m => `
+        <tr><td>${m.date}</td><td><button class="btn-del" onclick="del('meals','${m.id}')">✕</button></td></tr>
+    `).join('') || '<tr><td>No records</td></tr>';
+
+    document.getElementById("adminBazarBody").innerHTML = filteredBazar.reverse().map(b => `
+        <tr><td>${b.item} (${b.price}৳)</td><td><button class="btn-del" onclick="del('bazar','${b.id}')">✕</button></td></tr>
+    `).join('') || '<tr><td>No records</td></tr>';
 }
 
-// --- ACTIONS ---
+window.filterAdminByMember = (name) => {
+    selectedAdminMember = name;
+    fetchData();
+};
+
 window.addMeal = async () => {
     const member = document.getElementById("mealMember").value;
     const count = parseInt(document.getElementById("mealCount").value);
     const dateType = document.getElementById("mealDateType").value;
-    
-    let date;
-    if (isAdmin && dateType === "custom") {
-        date = document.getElementById("mealDate").value || getToday();
-    } else if (dateType === "tomorrow") {
-        date = getTomorrow();
-    } else {
-        date = getToday();
-    }
+    let date = (dateType === "tomorrow") ? getTomorrow() : (isAdmin && dateType === "custom" ? document.getElementById("mealDate").value : getToday());
 
     const entries = Array.from({length: count}, () => ({ member, date, added_by: currentUser.id }));
     const { error } = await supabase.from('meals').insert(entries);
-    
-    if(!error) {
-        showStatus(`Success! Added ${count} meal(s) for ${date}`);
-        fetchData();
-    } else {
-        showStatus("Failed to save meal", true);
-    }
+    if(!error) { showStatus(`Added ${count} meal(s) for ${date}`); fetchData(); }
 };
 
 window.addBazar = async () => {
     const item = document.getElementById("bazarItem").value;
     const price = Number(document.getElementById("bazarPrice").value);
     const member = document.getElementById("bazarMember").value;
-    const date = (isAdmin && document.getElementById("bazarDate").value) ? document.getElementById("bazarDate").value : getToday();
-    
-    const { error } = await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]);
-    
-    if(!error) {
-        showStatus("Bazar entry saved!");
-        document.getElementById("bazarItem").value = "";
-        document.getElementById("bazarPrice").value = "";
-        fetchData();
-    } else {
-        showStatus("Failed to save bazar", true);
-    }
+    const { error } = await supabase.from('bazar').insert([{ member, item, price, date: getToday(), added_by: currentUser.id }]);
+    if(!error) { showStatus("Bazar saved!"); document.getElementById("bazarItem").value = ""; document.getElementById("bazarPrice").value = ""; fetchData(); }
 };
 
 window.toggleAdminDate = () => {
@@ -141,7 +138,7 @@ window.toggleAdminDate = () => {
     document.getElementById("mealDate").style.display = (type === 'custom') ? 'block' : 'none';
 };
 
-window.del = async (t, id) => { if(confirm("Delete record?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
+window.del = async (t, id) => { if(confirm("Delete?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
 window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
 window.openTab = (n) => {
     document.querySelectorAll(".tab-content").forEach(c => c.style.display="none");
@@ -160,8 +157,7 @@ async function afterLogin() {
         let d = new Date();
         let target = new Date(d.getFullYear(), d.getMonth() - i, 1);
         let val = `${target.getFullYear()}-${String(target.getMonth()+1).padStart(2,'0')}`;
-        let opt = document.createElement("option");
-        opt.value = val;
+        let opt = document.createElement("option"); opt.value = val;
         opt.text = target.toLocaleString('default', { month: 'long', year: 'numeric' });
         vMonth.appendChild(opt);
     }
@@ -189,4 +185,3 @@ document.addEventListener('DOMContentLoaded', () => {
         if(error) alert(error.message);
     };
 });
-
