@@ -4,7 +4,7 @@ const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co';
 const supabaseKey = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ"; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "MASUM"]; 
+const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR","SHOJIB", "MASUM"]; 
 let currentUser = null, isAdmin = false, selectedAdminMember = null, selectedBazarMember = null;
 
 const getToday = () => new Date().toLocaleDateString('en-CA');
@@ -147,3 +147,4 @@ async function afterLogin() {
     if(isAdmin) { document.getElementById("adminTabBtn").style.display = "block"; document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); }
     fetchData();
 }
+
