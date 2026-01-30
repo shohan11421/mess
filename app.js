@@ -67,14 +67,13 @@ function renderSummary(mList, bList) {
 function renderBazarList(bList) {
     document.getElementById("bazarMemberNav").innerHTML = membersList.map(m => 
         `<button class="${selectedBazarMember === m ? 'active' : ''}" onclick="filterBazarByMember('${m}')">${m}</button>`).join('');
-    
     let display = (selectedBazarMember && selectedBazarMember !== 'ALL') ? bList.filter(b => b.member === selectedBazarMember) : bList;
-    document.getElementById("bazarCurrentViewTitle").innerText = selectedBazarMember === 'ALL' ? "All Records" : `Records: ${selectedBazarMember || 'Select'}`;
+    document.getElementById("bazarCurrentViewTitle").innerText = selectedBazarMember === 'ALL' ? "All Records" : `Records: ${selectedBazarMember || 'Select Member'}`;
     document.getElementById("bazarListContent").innerHTML = display.slice().reverse().map(b => `
         <div class="bazar-row">
             <div class="bazar-info"><b>${b.item}</b><span>${b.member} • ${b.date}</span></div>
             <b>${b.price}৳</b>
-        </div>`).join('') || '<p style="text-align:center; padding:20px; color:#94a3b8">No records found</p>';
+        </div>`).join('') || '<p style="text-align:center; padding:20px; color:#94a3b8">No records</p>';
 }
 
 function renderCalendar(mList, monthYear) {
@@ -94,10 +93,11 @@ function renderCalendar(mList, monthYear) {
 function renderAdmin(meals, bazar) {
     document.getElementById("adminMemberList").innerHTML = membersList.map(m => `<button class="${selectedAdminMember === m ? 'active' : ''}" onclick="filterAdminByMember('${m}')">${m}</button>`).join('');
     if (!selectedAdminMember) return;
+    document.getElementById("adminCurrentTitle").innerText = `Managing: ${selectedAdminMember}`;
     const fM = meals.filter(m => m.member === selectedAdminMember), fB = bazar.filter(b => b.member === selectedAdminMember);
     const gM = fM.reduce((acc, curr) => { acc[curr.date] = (acc[curr.date] || 0) + 1; return acc; }, {});
-    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button class="btn-del" onclick="adjustMeal('${selectedAdminMember}','${d}',-1)">-</button></td></tr>`).join('');
-    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td>${b.item}</td><td><button class="btn-del" onclick="del('bazar','${b.id}')">✕</button></td></tr>`).join('');
+    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button class="btn-del-mini" onclick="adjustMeal('${selectedAdminMember}','${d}',-1)">✕</button></td></tr>`).join('') || '<tr><td>No records</td></tr>';
+    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td style="text-align:left">${b.item}</td><td>${b.price}৳</td><td><button class="btn-del-mini" onclick="del('bazar','${b.id}')">✕</button></td></tr>`).join('') || '<tr><td>No records</td></tr>';
 }
 
 window.filterBazarByMember = (n) => { selectedBazarMember = n; fetchData(); };
@@ -134,7 +134,7 @@ async function afterLogin() {
         let val = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`;
         vM.innerHTML += `<option value="${val}">${t.toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`;
     }
-    const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m))}</option>`;
+    const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'User'}</option>`;
     document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
     if(isAdmin) { document.getElementById("adminTabBtn").style.display = "block"; document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); }
     fetchData();
