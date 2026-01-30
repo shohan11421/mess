@@ -30,7 +30,7 @@ window.fetchData = async () => {
 function renderPersonalStats(mList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m)) || "User";
     const count = mList.filter(m => m.member === name).length;
-    document.getElementById("personalStats").innerHTML = `User: <b>${name}</b> | Your Meals: <b>${count}</b>`;
+    document.getElementById("personalStats").innerHTML = `User: <b>${name}</b> | Meals: <b>${count}</b>`;
 }
 
 function renderSummary(mList, bList) {
@@ -44,9 +44,7 @@ function renderSummary(mList, bList) {
         </div>
         <div class="table-container">
             <table class="summary-table">
-                <thead>
-                    <tr><th>MEMBER</th><th>MEALS</th><th>COST</th><th>PAID</th><th>STATUS</th></tr>
-                </thead>
+                <thead><tr><th>MEMBER</th><th>MEALS</th><th>COST</th><th>PAID</th><th>STATUS</th></tr></thead>
                 <tbody>`;
 
     membersList.forEach(m => {
@@ -54,12 +52,8 @@ function renderSummary(mList, bList) {
         const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
         const cost = (meals * rate).toFixed(2);
         const bal = (paid - cost).toFixed(2);
-        html += `
-            <tr>
-                <td class="name-cell">${m}</td>
-                <td>${meals}</td><td>${cost}৳</td><td>${paid}৳</td>
-                <td style="color:${bal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">${bal}৳</td>
-            </tr>`;
+        html += `<tr><td class="name-cell">${m}</td><td>${meals}</td><td>${cost}৳</td><td>${paid}৳</td>
+                 <td style="color:${bal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">${bal}৳</td></tr>`;
     });
     document.getElementById("summaryContent").innerHTML = html + "</tbody></table></div>";
 }
@@ -73,7 +67,7 @@ function renderBazarList(bList) {
         <div class="bazar-row">
             <div class="bazar-info"><b>${b.item}</b><span>${b.member} • ${b.date}</span></div>
             <b>${b.price}৳</b>
-        </div>`).join('') || '<p style="text-align:center; padding:20px; color:#94a3b8">No records</p>';
+        </div>`).join('') || '<p style="text-align:center; padding:10px;">No records</p>';
 }
 
 function renderCalendar(mList, monthYear) {
@@ -93,15 +87,18 @@ function renderCalendar(mList, monthYear) {
 function renderAdmin(meals, bazar) {
     document.getElementById("adminMemberList").innerHTML = membersList.map(m => `<button class="${selectedAdminMember === m ? 'active' : ''}" onclick="filterAdminByMember('${m}')">${m}</button>`).join('');
     if (!selectedAdminMember) return;
-    document.getElementById("adminCurrentTitle").innerText = `Managing: ${selectedAdminMember}`;
+    document.getElementById("adminCurrentTitle").innerText = `Editing: ${selectedAdminMember}`;
     const fM = meals.filter(m => m.member === selectedAdminMember), fB = bazar.filter(b => b.member === selectedAdminMember);
     const gM = fM.reduce((acc, curr) => { acc[curr.date] = (acc[curr.date] || 0) + 1; return acc; }, {});
-    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button class="btn-del-mini" onclick="adjustMeal('${selectedAdminMember}','${d}',-1)">✕</button></td></tr>`).join('') || '<tr><td>No records</td></tr>';
-    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td style="text-align:left">${b.item}</td><td>${b.price}৳</td><td><button class="btn-del-mini" onclick="del('bazar','${b.id}')">✕</button></td></tr>`).join('') || '<tr><td>No records</td></tr>';
+    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button class="btn-del-mini" onclick="adjustMeal('${selectedAdminMember}','${d}',-1)">✕</button></td></tr>`).join('');
+    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td style="text-align:left">${b.item}<br><small>${b.date}</small></td><td>${b.price}৳</td><td><button class="btn-del-mini" onclick="del('bazar','${b.id}')">✕</button></td></tr>`).join('');
 }
 
 window.filterBazarByMember = (n) => { selectedBazarMember = n; fetchData(); };
 window.filterAdminByMember = (n) => { selectedAdminMember = n; fetchData(); };
+window.toggleAdminDate = () => { document.getElementById("mealDate").style.display = document.getElementById("mealDateType").value === 'custom' ? 'block' : 'none'; };
+window.toggleBazarAdminDate = () => { document.getElementById("bazarDate").style.display = document.getElementById("bazarDateType").value === 'custom' ? 'block' : 'none'; };
+
 window.addMeal = async () => {
     const member = document.getElementById("mealMember").value, count = parseInt(document.getElementById("mealCount").value);
     const dateType = document.getElementById("mealDateType").value;
@@ -109,13 +106,25 @@ window.addMeal = async () => {
     await supabase.from('meals').insert(Array.from({length: count}, () => ({ member, date, added_by: currentUser.id })));
     fetchData();
 };
+
 window.addBazar = async () => {
     const item = document.getElementById("bazarItem").value, price = Number(document.getElementById("bazarPrice").value), member = document.getElementById("bazarMember").value;
-    if(item && price) { await supabase.from('bazar').insert([{ member, item, price, date: getToday(), added_by: currentUser.id }]); document.getElementById("bazarItem").value=""; document.getElementById("bazarPrice").value=""; fetchData(); }
+    const dateType = document.getElementById("bazarDateType").value;
+    let date = (isAdmin && dateType === "custom") ? document.getElementById("bazarDate").value : getToday();
+    if(item && price && date) { 
+        await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]); 
+        document.getElementById("bazarItem").value=""; document.getElementById("bazarPrice").value=""; fetchData(); 
+    }
 };
-window.openTab = (n) => { document.querySelectorAll(".tab-content").forEach(c => c.style.display="none"); document.getElementById(n).style.display="block"; document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); event.currentTarget.classList.add("active"); };
+
+window.openTab = (n) => { 
+    document.querySelectorAll(".tab-content").forEach(c => c.style.display="none"); 
+    document.getElementById(n).style.display="block"; 
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    event.currentTarget.classList.add("active");
+};
+
 window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
-window.toggleAdminDate = () => { document.getElementById("mealDate").style.display = document.getElementById("mealDateType").value === 'custom' ? 'block' : 'none'; };
 window.del = async (t, id) => { if(confirm("Delete?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
 window.adjustMeal = async (m, d, c) => { const { data } = await supabase.from('meals').select('id').eq('member', m).eq('date', d).limit(1); if (data.length) await supabase.from('meals').delete().eq('id', data[0].id); fetchData(); };
 
@@ -131,8 +140,7 @@ async function afterLogin() {
     const vM = document.getElementById("viewMonth"); vM.innerHTML = "";
     for(let i=0; i<3; i++) {
         let t = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
-        let val = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`;
-        vM.innerHTML += `<option value="${val}">${t.toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`;
+        vM.innerHTML += `<option value="${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}">${t.toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`;
     }
     const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'User'}</option>`;
     document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
