@@ -52,8 +52,10 @@
             </div>
 
             <div id="bazar" class="tab-content" style="display:none">
+                <div id="bazarStats" class="bazar-stats-grid"></div>
+                
                 <div class="card">
-                    <h3>Bazar Entry</h3>
+                    <h3>Add New Expense</h3>
                     <select id="bazarMember"></select>
                     <div class="input-group">
                         <input type="text" id="bazarItem" placeholder="Item name">
@@ -61,7 +63,12 @@
                     </div>
                     <button onclick="addBazar()" class="btn-primary">Save Entry</button>
                 </div>
-                <div id="bazarStats" class="bazar-stats-grid"></div>
+
+                <div class="card" style="padding: 10px;">
+                    <p style="font-size: 11px; margin: 5px 0 8px 10px; color: #64748b; font-weight: bold;">VIEW RECORDS FOR:</p>
+                    <div id="bazarMemberNav" class="member-nav-horizontal"></div>
+                </div>
+
                 <div id="bazarList" class="card"></div>
             </div>
 
@@ -76,16 +83,14 @@
                         <div id="adminMemberList" class="member-nav"></div>
                     </aside>
                     <main class="admin-main">
-                        <div id="adminDataHeader" class="admin-data-header">
-                            <h3>Select a member</h3>
-                        </div>
+                        <div id="adminDataHeader" class="admin-data-header"><h3>Select a member</h3></div>
                         <div class="admin-grid-view">
                             <div class="card">
-                                <h4>Meal Records</h4>
+                                <h4>Meals</h4>
                                 <div class="admin-scroll"><table class="pro-table mini"><tbody id="adminMealBody"></tbody></table></div>
                             </div>
                             <div class="card">
-                                <h4>Bazar Records</h4>
+                                <h4>Bazar</h4>
                                 <div class="admin-scroll"><table class="pro-table mini"><tbody id="adminBazarBody"></tbody></table></div>
                             </div>
                         </div>
