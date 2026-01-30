@@ -53,12 +53,11 @@
 
             <div id="bazar" class="tab-content" style="display:none">
                 <div id="bazarStats" class="bazar-stats-grid"></div>
-
                 <div class="card">
                     <h3>Add New Expense</h3>
                     <select id="bazarMember"></select>
                     <div class="input-group">
-                        <input type="text" id="bazarItem" placeholder="Item name (e.g., Rice)">
+                        <input type="text" id="bazarItem" placeholder="Item name">
                         <input type="number" id="bazarPrice" placeholder="Price (৳)">
                     </div>
                     <button onclick="addBazar()" class="btn-primary">Save Entry</button>
@@ -70,17 +69,9 @@
                         <div id="bazarMemberNav" class="member-nav"></div>
                         <button onclick="filterBazarByMember('ALL')" class="btn-all-list">View All List</button>
                     </aside>
-
                     <main class="admin-main">
-                        <div class="admin-data-header">
-                            <h3 id="bazarCurrentViewTitle">Expense List</h3>
-                        </div>
-
-                        <div class="card" style="padding: 10px;">
-                            <h4 style="color: #64748b; margin: 10px 0 10px 10px;">Bazar Records</h4>
-                            <div id="bazarListContent" class="admin-scroll">
-                                </div>
-                        </div>
+                        <div class="admin-data-header"><h3 id="bazarCurrentViewTitle">Expense List</h3></div>
+                        <div class="card"><div id="bazarListContent" class="admin-scroll"></div></div>
                     </main>
                 </div>
             </div>
@@ -92,19 +83,27 @@
             <div id="admin" class="tab-content" style="display:none">
                 <div class="admin-layout">
                     <aside class="admin-sidebar">
-                        <h4>Manage</h4>
+                        <h4>Manage Members</h4>
                         <div id="adminMemberList" class="member-nav"></div>
                     </aside>
                     <main class="admin-main">
-                        <div id="adminDataHeader" class="admin-data-header"><h3>Admin Panel</h3></div>
+                        <div id="adminDataHeader" class="admin-data-header">
+                            <h3 id="adminCurrentTitle">Select a member to edit</h3>
+                        </div>
                         <div class="admin-grid-view">
                             <div class="card">
-                                <h4>Adjust Meals</h4>
-                                <div class="admin-scroll"><table class="pro-table mini"><tbody id="adminMealBody"></tbody></table></div>
+                                <h4>Meal Adjustments</h4>
+                                <div class="admin-scroll"><table class="pro-table">
+                                    <thead><tr><th>Date</th><th>Qty</th><th>Action</th></tr></thead>
+                                    <tbody id="adminMealBody"></tbody>
+                                </table></div>
                             </div>
                             <div class="card">
-                                <h4>Remove Bazar</h4>
-                                <div class="admin-scroll"><table class="pro-table mini"><tbody id="adminBazarBody"></tbody></table></div>
+                                <h4>Bazar Adjustments</h4>
+                                <div class="admin-scroll"><table class="pro-table">
+                                    <thead><tr><th>Item</th><th>Price</th><th>Action</th></tr></thead>
+                                    <tbody id="adminBazarBody"></tbody>
+                                </table></div>
                             </div>
                         </div>
                     </main>
