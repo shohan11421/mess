@@ -158,12 +158,66 @@ window.renderBillsTab = (mList, bList, savedBills) => {
 };
 
 window.renderAdmin = (meals, bazar) => {
-    document.getElementById("adminMemberList").innerHTML = membersList.map(m => `<button class="${selectedAdminMember === m ? 'active' : ''}" onclick="window.filterAdminByMember('${m}')">${m}</button>`).join('');
-    if (!selectedAdminMember) return;
-    const fM = meals.filter(m => m.member === selectedAdminMember), fB = bazar.filter(b => b.member === selectedAdminMember);
-    const gM = fM.reduce((acc, curr) => { acc[curr.date] = (acc[curr.date] || 0) + 1; return acc; }, {});
-    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button onclick="window.adjustMeal('${selectedAdminMember}','${d}')">✕</button></td></tr>`).join('');
-    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td style="text-align:left">${b.item}<br><small>${b.date}</small></td><td>${b.price}৳</td><td><button onclick="window.del('bazar','${b.id}')">✕</button></td></tr>`).join('');
+    // 1. Render the Member Selection Sidebar
+    const adminMemberList = document.getElementById("adminMemberList");
+    adminMemberList.innerHTML = membersList.map(m => 
+        `<button class="${selectedAdminMember === m ? 'active' : ''}" 
+                 onclick="window.filterAdminByMember('${m}')">
+            ${m}
+         </button>`
+    ).join('');
+
+    // If no member is selected, clear the display or show a placeholder
+    if (!selectedAdminMember) {
+        document.getElementById("adminCurrentTitle").innerText = "Select a Member to View Records";
+        document.getElementById("adminMealBody").innerHTML = "";
+        document.getElementById("adminBazarBody").innerHTML = "";
+        return;
+    }
+
+    // 2. Update Header for Selected Member
+    document.getElementById("adminCurrentTitle").innerText = `Records for ${selectedAdminMember}`;
+
+    // 3. Filter and Process Data for the Selected Member
+    const filteredMeals = meals.filter(m => m.member === selectedAdminMember);
+    const filteredBazar = bazar.filter(b => b.member === selectedAdminMember);
+
+    // Group meals by date for a cleaner list
+    const groupedMeals = filteredMeals.reduce((acc, curr) => { 
+        acc[curr.date] = (acc[curr.date] || 0) + 1; 
+        return acc; 
+    }, {});
+
+    // 4. Render Meals List (Main Column)
+    document.getElementById("adminMealBody").innerHTML = Object.keys(groupedMeals)
+        .sort()
+        .reverse()
+        .map(date => `
+            <tr>
+                <td>${date}</td>
+                <td><b>${groupedMeals[date]}</b> Meals</td>
+                <td style="text-align:right">
+                    <button onclick="window.adjustMeal('${selectedAdminMember}','${date}')" class="btn-logout" style="padding: 4px 8px;">✕</button>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="3">No meals found</td></tr>';
+
+    // 5. Render Bazar List (Main Column)
+    document.getElementById("adminBazarBody").innerHTML = filteredBazar
+        .slice()
+        .reverse()
+        .map(item => `
+            <tr>
+                <td style="text-align:left">
+                    <b>${item.item}</b><br>
+                    <small>${item.date}</small>
+                </td>
+                <td><b>${item.price}৳</b></td>
+                <td style="text-align:right">
+                    <button onclick="window.del('bazar','${item.id}')" class="btn-logout" style="padding: 4px 8px;">✕</button>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="3">No bazar entries found</td></tr>';
 };
 
 window.adjustMeal = async (m, d) => { 
@@ -231,4 +285,5 @@ async function afterLogin() {
     }
     fetchData();
 }
+
 
