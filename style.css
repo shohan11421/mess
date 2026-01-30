@@ -218,3 +218,34 @@ input, select {
     .card { border: none; padding: 0; }
     body { background: white; }
 }
+
+/* FORCE ALL NAMES TO FIT ON ONE PAGE (MOBILE) */
+@media (max-width: 600px) {
+    /* Reduce container padding to gain side space */
+    body { padding: 5px; }
+    .card { padding: 10px; }
+
+    /* Shrink the Meal Log table to fit the screen width */
+    #mealCalendar {
+        display: table !important; /* Disables the sliding behavior */
+        table-layout: fixed;      /* Forces columns to stay within screen */
+        width: 100% !important;
+        min-width: unset !important;
+    }
+
+    #mealCalendar th, 
+    #mealCalendar td {
+        min-width: unset !important; /* Removes the 85px restriction */
+        padding: 8px 2px !important; /* Tightens the horizontal space */
+        font-size: 10px !important;  /* Smaller text to fit full names */
+        word-wrap: break-word;       /* Allows names to wrap to a second line */
+        white-space: normal !important; 
+    }
+
+    /* Keep the 'Day' column very slim */
+    #mealCalendar th:first-child, 
+    #mealCalendar td:first-child {
+        width: 25px !important;
+        position: static !important; /* Remove sticky so it doesn't overlap */
+    }
+}
