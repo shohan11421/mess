@@ -33,14 +33,12 @@
                 <div class="card">
                     <h3>Add Meal</h3>
                     <select id="mealMember"></select>
-                    
                     <select id="mealDateType" onchange="toggleAdminDate()">
                         <option value="today">Today</option>
                         <option value="tomorrow">Tomorrow</option>
                         <option value="custom" class="admin-only" style="display:none">Custom Date</option>
                     </select>
                     <input type="date" id="mealDate" class="admin-only" style="display:none; margin-top:10px;">
-                    
                     <input type="number" id="mealCount" value="1" min="1">
                     <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                 </div>
@@ -57,7 +55,6 @@
                 <div class="card">
                     <h3>Bazar Entry</h3>
                     <select id="bazarMember"></select>
-                    <input type="date" id="bazarDate" class="admin-only" style="display:none">
                     <input type="text" id="bazarItem" placeholder="What did you buy?">
                     <input type="number" id="bazarPrice" placeholder="Price (৳)">
                     <button onclick="addBazar()" class="btn-primary">Save Entry</button>
@@ -70,12 +67,26 @@
             </div>
 
             <div id="admin" class="tab-content" style="display:none">
-                <div class="card">
-                    <h3>Admin Management</h3>
-                    <div class="admin-grid">
-                        <div><h4>Meals</h4><table class="pro-table"><tbody id="adminMealBody"></tbody></table></div>
-                        <div><h4>Bazar</h4><table class="pro-table"><tbody id="adminBazarBody"></tbody></table></div>
-                    </div>
+                <div class="admin-layout">
+                    <aside class="admin-sidebar">
+                        <h4>Members</h4>
+                        <div id="adminMemberList" class="member-nav"></div>
+                    </aside>
+                    <main class="admin-main">
+                        <div id="adminDataHeader" class="admin-data-header">
+                            <h3>Select a member to manage</h3>
+                        </div>
+                        <div class="admin-grid-view">
+                            <div class="card">
+                                <h4>Meals</h4>
+                                <div class="admin-scroll"><table class="pro-table mini"><tbody id="adminMealBody"></tbody></table></div>
+                            </div>
+                            <div class="card">
+                                <h4>Bazar</h4>
+                                <div class="admin-scroll"><table class="pro-table mini"><tbody id="adminBazarBody"></tbody></table></div>
+                            </div>
+                        </div>
+                    </main>
                 </div>
             </div>
         </div>
