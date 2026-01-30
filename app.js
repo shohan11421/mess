@@ -39,7 +39,7 @@ window.fetchData = async () => {
     renderPersonalDashboard(meals || []);
     renderCalendar(meals || [], monthVal);
     renderSummary(meals || [], bazar || []);
-    renderGlobalBazarList(bazar || [], meals || []);
+    renderGlobalBazarList(bazar || []);
     if(isAdmin) renderAdmin(meals || [], bazar || []);
 };
 
@@ -63,7 +63,7 @@ function renderCalendar(mList, monthYear) {
     document.getElementById("mealCalendar").innerHTML = html + "</tbody>";
 }
 
-function renderGlobalBazarList(bList, mList) {
+function renderGlobalBazarList(bList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m));
     const totalSpent = bList.reduce((s, b) => s + b.price, 0);
     const userSpent = bList.filter(b => b.member === name).reduce((s, b) => s + b.price, 0);
@@ -76,12 +76,10 @@ function renderGlobalBazarList(bList, mList) {
         <button class="${selectedBazarMember === m ? 'active' : ''}" onclick="filterBazarByMember('${m}')">${m}</button>`).join('');
 
     let displayBazar = bList;
-    let displayMeals = mList;
-    let title = "Full Mess Records";
+    let title = "Full Bazar Records";
 
     if (selectedBazarMember && selectedBazarMember !== 'ALL') {
         displayBazar = bList.filter(b => b.member === selectedBazarMember);
-        displayMeals = mList.filter(m => m.member === selectedBazarMember);
         title = `Records: ${selectedBazarMember}`;
     }
 
@@ -89,17 +87,12 @@ function renderGlobalBazarList(bList, mList) {
 
     document.getElementById("bazarListContent").innerHTML = displayBazar.slice().reverse().map(b => `
         <div class="bazar-row">
-            <div class="bazar-info"><span class="item-name">${b.item}</span><span class="buyer-name">${b.member} • ${b.date}</span></div>
+            <div class="bazar-info">
+                <span class="item-name">${b.item}</span>
+                <span class="buyer-name">${b.member} • ${b.date}</span>
+            </div>
             <b class="bazar-amount">${b.price}৳</b>
-        </div>`).join('') || '<p>No data</p>';
-
-    const mealGrouped = displayMeals.reduce((acc, curr) => {
-        acc[curr.date] = (acc[curr.date] || 0) + 1;
-        return acc;
-    }, {});
-
-    document.getElementById("bazarMealContent").innerHTML = Object.keys(mealGrouped).sort().reverse().map(date => `
-        <div class="bazar-row"><span>${date}</span><b>${mealGrouped[date]} Meals</b></div>`).join('') || '<p>No data</p>';
+        </div>`).join('') || '<p style="padding:20px; text-align:center; color:#94a3b8;">No records</p>';
 }
 
 function renderSummary(mList, bList) {
@@ -166,6 +159,7 @@ window.addBazar = async () => {
     const item = document.getElementById("bazarItem").value;
     const price = Number(document.getElementById("bazarPrice").value);
     const member = document.getElementById("bazarMember").value;
+    if(!item || !price) return alert("Fill item and price");
     const { error } = await supabase.from('bazar').insert([{ member, item, price, date: getToday(), added_by: currentUser.id }]);
     if(!error) { showStatus("Bazar saved"); document.getElementById("bazarItem").value=""; document.getElementById("bazarPrice").value=""; fetchData(); }
 };
