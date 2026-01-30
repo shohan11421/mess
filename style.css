@@ -21,4 +21,25 @@ input, select { padding: 12px; border: 1px solid var(--border); border-radius: 8
 .btn-del { background: #fee2e2; color: var(--danger); border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
 .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .month-picker { width: auto !important; border: 2px solid var(--accent); color: var(--accent); font-weight: bold; }
+
+/* Status Notification Style */
+.status-popup {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { bottom: -50px; opacity: 0; }
+    to { bottom: 20px; opacity: 1; }
+}
+
 @media (max-width: 600px) { .admin-grid { grid-template-columns: 1fr; } }
