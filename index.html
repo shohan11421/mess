@@ -23,14 +23,15 @@
             </header>
 
             <div id="bazarAlert" style="display:none; margin-bottom: 15px;">
-    <div class="card" style="background: #fffbeb; border: 1px solid #f59e0b; padding: 12px; display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 20px;">🛒</span>
-        <div style="flex: 1;">
-            <p style="margin: 0; font-size: 13px; color: #92400e; font-weight: 600;">Today's Bazar Duty</p>
-            <h4 id="todayBazarMember" style="margin: 0; color: #b45309; font-size: 16px;">Loading...</h4>
-        </div>
-    </div>
-</div>
+                <div class="card" style="background: #fffbeb; border: 1px solid #f59e0b; padding: 12px; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">🛒</span>
+                    <div style="flex: 1;">
+                        <p style="margin: 0; font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase;">Today's Bazar Duty</p>
+                        <h4 id="todayBazarMember" style="margin: 0; color: #b45309; font-size: 16px;">Loading...</h4>
+                    </div>
+                </div>
+            </div>
+
             <nav class="tabs">
                 <button class="tab-btn active" onclick="openTab('calendar')">Attendance</button>
                 <button class="tab-btn" onclick="openTab('bazar')">Bazar</button>
@@ -60,21 +61,20 @@
 
             <div id="bazar" class="tab-content" style="display:none">
                 <div class="card">
+                    <h3>Bazar Schedule</h3>
+                    <div id="bazarScheduleList" class="schedule-grid" style="margin-bottom: 15px;"></div>
+                    
+                    <div class="admin-only" style="display:none; border-top:1px solid #eee; padding-top:15px;">
+                        <h4 style="margin-bottom:10px">Assign Bazar Duty</h4>
+                        <div class="input-group">
+                            <input type="date" id="scheduleDate">
+                            <select id="scheduleMember"></select>
+                        </div>
+                        <button onclick="saveSchedule()" class="btn-primary" style="background:var(--accent); margin-top:5px;">Update Schedule</button>
+                    </div>
+                </div>
 
-                    <div class="card">
-    <h3>Bazar Schedule</h3>
-    <div id="bazarScheduleList" class="schedule-grid">
-        </div>
-    
-    <div class="admin-only" style="display:none; margin-top:20px; border-top:1px solid #eee; pt-15px;">
-        <h4>Assign Bazar Duty</h4>
-        <div class="input-group">
-            <input type="date" id="scheduleDate">
-            <select id="scheduleMember"></select>
-        </div>
-        <button onclick="saveSchedule()" class="btn-primary" style="background:var(--accent)">Assign Member</button>
-    </div>
-</div>
+                <div class="card">
                     <h3>Add Expense</h3>
                     <select id="bazarMember"></select>
                     <div class="input-group">
@@ -84,10 +84,11 @@
                     <div id="bazarDateContainer"></div>
                     <button onclick="addBazar()" class="btn-primary" style="margin-top:10px;">Save Entry</button>
                 </div>
+
                 <div class="admin-layout">
                     <aside class="admin-sidebar">
-    <div id="bazarMemberNav" class="member-nav"></div>
-</aside>
+                        <div id="bazarMemberNav" class="member-nav"></div>
+                    </aside>
                     <main class="admin-main">
                         <div class="card"><div id="bazarListContent" class="admin-scroll"></div></div>
                     </main>
@@ -126,5 +127,3 @@
     <script type="module" src="app.js"></script>
 </body>
 </html>
-
-
