@@ -43,6 +43,7 @@ window.saveMonthlyBills = async () => {
     const month = document.getElementById("viewMonth").value;
     const updates = membersList.map(m => {
         const mealBal = Number(document.getElementById(`status-val-${m}`).innerText) || 0;
+        const totalP = parseFloat(document.getElementById(`final-${m}`).innerText);
         return {
             month, member: m,
             rent: Number(document.getElementById(`rent-${m}`).value) || 0,
@@ -51,7 +52,7 @@ window.saveMonthlyBills = async () => {
             elec: Number(document.getElementById(`elec-${m}`).value) || 0,
             khala: Number(document.getElementById(`khala-${m}`).value) || 0,
             meal_balance: mealBal,
-            total_payable: parseFloat(document.getElementById(`final-${m}`).innerText)
+            total_payable: isNaN(totalP) ? 0 : totalP
         };
     });
     const { error } = await supabase.from('monthly_bills').upsert(updates, { onConflict: 'month,member' });
@@ -70,7 +71,7 @@ function renderSummary(mList, bList) {
     const totalMeals = mList.length;
     const rate = totalMeals ? (totalBazar / totalMeals).toFixed(2) : 0;
 
-    let html = `<div class="summary-black-card"><p>Total Bazar: <b>${totalBazar}৳</b> | Meals: <b>${totalMeals}</b> | Rate: <b>${rate}৳</b></p></div>
+    let html = `<div class="card" style="background:#1e293b; color:white"><p>Total Bazar: <b>${totalBazar}৳</b> | Meals: <b>${totalMeals}</b> | Rate: <b>${rate}৳</b></p></div>
                 <table class="summary-table"><thead><tr><th>Member</th><th>Meals</th><th>Cost</th><th>Paid</th><th>Balance</th></tr></thead><tbody>`;
 
     membersList.forEach(m => {
@@ -91,7 +92,7 @@ function renderBazarList(bList) {
     let display = (selectedBazarMember && selectedBazarMember !== 'ALL') ? bList.filter(b => b.member === selectedBazarMember) : bList;
     document.getElementById("bazarListContent").innerHTML = display.slice().reverse().map(b => `
         <div class="bazar-row">
-            <div class="bazar-info"><b>${b.item}</b><span>${b.member} • ${b.date}</span></div>
+            <div class="bazar-info"><b>${b.item}</b><br><small>${b.member} • ${b.date}</small></div>
             <b>${b.price}৳</b>
         </div>`).join('') || '<p style="text-align:center; padding:10px;">No records</p>';
 }
@@ -138,8 +139,8 @@ function renderAdmin(meals, bazar) {
     if (!selectedAdminMember) return;
     const fM = meals.filter(m => m.member === selectedAdminMember), fB = bazar.filter(b => b.member === selectedAdminMember);
     const gM = fM.reduce((acc, curr) => { acc[curr.date] = (acc[curr.date] || 0) + 1; return acc; }, {});
-    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button class="btn-del-mini" onclick="window.adjustMeal('${selectedAdminMember}','${d}')">✕</button></td></tr>`).join('');
-    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td style="text-align:left">${b.item}<br><small>${b.date}</small></td><td>${b.price}৳</td><td><button class="btn-del-mini" onclick="window.del('bazar','${b.id}')">✕</button></td></tr>`).join('');
+    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button onclick="window.adjustMeal('${selectedAdminMember}','${d}')">✕</button></td></tr>`).join('');
+    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td style="text-align:left">${b.item}<br><small>${b.date}</small></td><td>${b.price}৳</td><td><button onclick="window.del('bazar','${b.id}')">✕</button></td></tr>`).join('');
 }
 
 // --- CORE ACTIONS ---
@@ -147,6 +148,7 @@ window.addMeal = async () => {
     const member = document.getElementById("mealMember").value, count = parseInt(document.getElementById("mealCount").value);
     const dateType = document.getElementById("mealDateType").value;
     let date = dateType === "tomorrow" ? getTomorrow() : (dateType === "custom" ? document.getElementById("mealDate").value : getToday());
+    if(!date) return alert("Select Date");
     await supabase.from('meals').insert(Array.from({length: count}, () => ({ member, date, added_by: currentUser.id })));
     fetchData();
 };
@@ -154,7 +156,10 @@ window.addMeal = async () => {
 window.addBazar = async () => {
     const item = document.getElementById("bazarItem").value, price = Number(document.getElementById("bazarPrice").value), member = document.getElementById("bazarMember").value;
     const dateType = document.getElementById("bazarDateType")?.value;
-    let date = (isAdmin && dateType === "custom") ? document.getElementById("bazarDate").value : getToday();
+    const customDate = document.getElementById("bazarDate")?.value;
+    
+    let date = (isAdmin && dateType === "custom" && customDate) ? customDate : getToday();
+    
     if(item && price) { 
         await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]); 
         document.getElementById("bazarItem").value=""; document.getElementById("bazarPrice").value=""; fetchData(); 
@@ -171,6 +176,7 @@ window.del = async (t, id) => { if(confirm("Delete?")) { await supabase.from(t).
 window.filterBazarByMember = (n) => { selectedBazarMember = n; fetchData(); };
 window.filterAdminByMember = (n) => { selectedAdminMember = n; fetchData(); };
 window.toggleAdminDate = () => { document.getElementById("mealDate").style.display = document.getElementById("mealDateType").value === 'custom' ? 'block' : 'none'; };
+window.toggleBazarAdminDate = () => { document.getElementById("bazarDate").style.display = document.getElementById("bazarDateType").value === 'custom' ? 'block' : 'none'; };
 
 window.openTab = (n) => { 
     document.querySelectorAll(".tab-content").forEach(c => c.style.display="none"); 
