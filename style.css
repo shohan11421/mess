@@ -3,33 +3,31 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; paddi
 .container { max-width: 900px; margin: 0 auto; }
 .card { background: white; border-radius: 12px; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
 
-/* Dashboard & Tabs */
-.dashboard-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border); }
+/* Dashboard Header */
+.dashboard-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border); }
+
+/* Tabs */
 .tabs { display: flex; gap: 5px; background: #f1f5f9; padding: 5px; border-radius: 12px; margin-bottom: 20px; overflow-x: auto; }
 .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; color: #64748b; font-weight: 600; background: transparent; white-space: nowrap; }
 .tab-btn.active { background: white; color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 
-/* Table Styles (Summary/Bills) */
-.table-container { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 5px; overflow-x: auto; }
-.summary-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-.summary-table th { padding: 15px 5px; font-size: 10px; color: #94a3b8; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
-.summary-table td { padding: 12px 5px; text-align: center; font-size: 13px; border-bottom: 1px solid #f8fafc; }
-.name-cell { font-weight: 800; color: #1e293b; text-align: left !important; padding-left: 15px !important; }
+/* Tables */
+.pro-table, .summary-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.summary-table th { font-size: 10px; text-transform: uppercase; color: #94a3b8; padding: 10px; border-bottom: 1px solid var(--border); }
+.summary-table td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #f8fafc; font-size: 13px; }
+.name-cell { font-weight: 800; color: var(--primary); text-align: left !important; }
 
-/* Input Fixes */
-.mini-input { width: 65px !important; padding: 6px !important; text-align: center; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; margin: 0 !important; }
+/* Input Styling */
 .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
-input, select { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
+input, select { padding: 12px; border: 1px solid var(--border); border-radius: 8px; width: 100%; box-sizing: border-box; }
+.mini-input { width: 60px !important; padding: 5px !important; text-align: center; border: 1px solid var(--border); border-radius: 6px; }
 
-/* Bazar Layout */
-.admin-layout { display: flex; gap: 15px; }
-.admin-sidebar { width: 160px; flex-shrink: 0; }
-.member-nav button { width: 100%; text-align: left; padding: 10px; margin-bottom: 5px; border-radius: 8px; border: 1px solid var(--border); background: white; cursor: pointer; }
+/* Buttons */
+.btn-primary { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 700; }
+.btn-logout { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
+
+/* Admin Layout */
+.admin-layout { display: flex; gap: 15px; margin-top: 20px; }
+.admin-sidebar { width: 150px; flex-shrink: 0; }
+.member-nav button { width: 100%; text-align: left; padding: 10px; margin-bottom: 5px; border: 1px solid var(--border); border-radius: 8px; background: white; cursor: pointer; }
 .member-nav button.active { border: 2px solid var(--accent); color: var(--accent); }
-.bazar-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f1f5f9; }
-
-@media (max-width: 768px) {
-    .admin-layout { flex-direction: column; }
-    .admin-sidebar { width: 100%; display: flex; overflow-x: auto; gap: 5px; }
-    .member-nav { display: flex; gap: 5px; }
-}
