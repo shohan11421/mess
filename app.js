@@ -27,6 +27,7 @@ window.fetchData = async () => {
     renderSummary(meals || [], bazar || []);
     renderBazarList(bazar || []);
     if(isAdmin) renderAdmin(meals || [], bazar || []);
+    renderFinalSettlement();
 };
 
 function renderPersonalStats(mList) {
@@ -193,3 +194,4 @@ window.calcNet = (idx, mealBal) => {
     const net = otherBill - mealBal;
     netCell.innerText = net.toFixed(0) + "৳";
 };
+
