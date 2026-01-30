@@ -51,7 +51,7 @@
                         <div class="card">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
                                 <h3 style="margin:0">Meal Log</h3>
-                                <select id="viewMonth" onchange="fetchData()" style="width:auto; padding:5px; margin:0"></select>
+                                <select id="viewMonth" onchange="fetchData()" style="width:auto; padding:5px;"></select>
                             </div>
                             <div class="table-container"><table id="mealCalendar" class="pro-table"></table></div>
                         </div>
@@ -67,17 +67,8 @@
                             </div>
                             <button onclick="addBazar()" class="btn-primary">Save Entry</button>
                         </div>
-                        <div class="admin-layout">
-                            <aside class="admin-sidebar">
-                                <div id="bazarMemberNav" class="member-nav"></div>
-                                <button onclick="filterBazarByMember('ALL')" class="btn-all-list">View All</button>
-                            </aside>
-                            <main class="admin-main">
-                                <div class="card">
-                                    <h4 id="bazarFilterTitle" style="margin:0 0 10px 0; color:var(--accent); font-size:12px">All Expenses</h4>
-                                    <div id="bazarListContent" class="admin-scroll"></div>
-                                </div>
-                            </main>
+                        <div class="card">
+                            <div id="bazarListContent"></div>
                         </div>
                     </div>
 
@@ -87,7 +78,7 @@
 
                     <div id="billsTab" class="tab-content">
                         <div class="card">
-                            <h3 style="margin-top:0">Monthly Bills</h3>
+                            <h3 style="margin-top:0">Personal Bills</h3>
                             <div id="billsContent" class="table-container"></div>
                             <div style="margin-top:15px; display:flex; gap:10px;">
                                 <button onclick="saveMonthlyBills()" class="btn-primary">Save Records</button>
@@ -98,11 +89,13 @@
 
                     <div id="admin" class="tab-content">
                         <div class="admin-layout">
-                            <aside class="admin-sidebar"><div id="adminMemberList" class="member-nav"></div></aside>
+                            <aside class="admin-sidebar">
+                                <div id="adminMemberList" class="member-nav"></div>
+                            </aside>
                             <main class="admin-main">
                                 <div class="sub-grid">
-                                    <div class="card"><h4>Meals</h4><div id="adminMealBody" class="admin-scroll"></div></div>
-                                    <div class="card"><h4>Bazar</h4><div id="adminBazarBody" class="admin-scroll"></div></div>
+                                    <div class="card"><h4>Meals</h4><div id="adminMealBody"></div></div>
+                                    <div class="card"><h4>Bazar</h4><div id="adminBazarBody"></div></div>
                                 </div>
                             </main>
                         </div>
