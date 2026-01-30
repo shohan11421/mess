@@ -479,3 +479,20 @@ input[type=number] {
     }
 }
 
+/* Bazar Schedule Styles */
+.schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+.schedule-item {
+    background: #f1f5f9;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+.schedule-item b { display: block; color: var(--accent); font-size: 14px; }
+.schedule-item span { font-size: 11px; color: var(--text-muted); }
+.duty-today { background: #dcfce7; border-color: #22c55e; } /* Highlight today's duty */
