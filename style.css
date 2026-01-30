@@ -170,15 +170,9 @@ input, select {
 
 .btn-primary:hover { opacity: 0.9; }
 
-.btn-logout { 
-    background: var(--danger); 
-    color: white; 
-    border: none; 
-    padding: 6px 14px; 
-    border-radius: 20px; 
-    cursor: pointer; 
-    font-size: 11px; 
-    font-weight: 600;
+.btn-logout {
+    margin-top: 5px; /* Adds breathing room below the stats */
+    display: inline-block;
 }
 
 /* --- BAZAR LIST --- */
@@ -319,3 +313,4 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
