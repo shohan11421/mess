@@ -1,37 +1,51 @@
 :root { 
     --bg: #f8fafc; --primary: #1e293b; --accent: #3b82f6; 
-    --border: #e2e8f0; --success: #059669;
+    --border: #e2e8f0; --success: #059669; --danger: #ef4444;
 }
 
 body { 
     font-family: 'Inter', sans-serif; background: var(--bg); 
-    margin: 0; padding: 8px; color: #334155; 
+    margin: 0; padding: 8px; color: #334155; line-height: 1.4;
 }
 
 .container { max-width: 850px; margin: 0 auto; }
 
 .card { background: white; border-radius: 8px; padding: 12px; border: 1px solid var(--border); margin-bottom: 10px; }
 
+.dashboard-header { 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 8px 12px; font-size: 12px; font-weight: 600;
+}
+
 .tabs { display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 8px; margin-bottom: 10px; overflow-x: auto; }
 .tab-btn { flex: 1; padding: 8px; border: none; border-radius: 6px; cursor: pointer; color: #64748b; font-size: 11px; font-weight: 700; background: transparent; white-space: nowrap; }
 .tab-btn.active { background: white; color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-/* Table Structure Fix */
-.table-container { overflow-x: auto; background: white; border: 1px solid var(--border); border-radius: 0 0 8px 8px; }
-.pro-table, .summary-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 400px; }
-.pro-table th, .summary-table th { padding: 8px; font-size: 10px; background: #f8fafc; color: #94a3b8; border-bottom: 1px solid var(--border); text-transform: uppercase; }
-.pro-table td, .summary-table td { padding: 8px; border-bottom: 1px solid #f1f5f9; text-align: center; }
+/* Table System */
+.table-container { 
+    overflow-x: auto; background: white; border: 1px solid var(--border); border-radius: 8px; 
+    -webkit-overflow-scrolling: touch; 
+}
+.pro-table, .summary-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pro-table th, .summary-table th { padding: 10px 5px; font-size: 10px; background: #f8fafc; color: #94a3b8; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+.pro-table td, .summary-table td { padding: 8px 5px; border-bottom: 1px solid #f1f5f9; text-align: center; }
 
-/* Sticky Left Column for Mobile */
+/* Sticky Column */
 .name-cell { 
     position: sticky; left: 0; background: white !important; z-index: 2; 
-    font-weight: 800; text-align: left !important; padding-left: 10px !important;
+    font-weight: 800; text-align: left !important; padding-left: 12px !important;
     border-right: 2px solid var(--border) !important;
 }
 
-/* Settlement Compact UI */
+/* Settlement UI */
 .summary-table { min-width: 750px; }
+.summary-black-card { background: #1a2233; color: white; padding: 10px; border-radius: 8px 8px 0 0; text-align: center; font-size: 12px; }
 .editable-bill { background: #fffbeb !important; border: 1px dashed #f59e0b !important; color: #b45309; font-weight: 700; border-radius: 4px; padding: 4px; min-width: 50px; outline: none; }
-.summary-black-card { background: #1a2233; color: white; padding: 12px; border-radius: 8px 8px 0 0; text-align: center; font-size: 12px; }
 
+/* Form Elements */
+.input-group { display: flex; gap: 5px; margin-bottom: 8px; }
+input, select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
 .btn-primary { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: 700; }
+.btn-logout { background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 15px; font-size: 10px; cursor: pointer; }
+.btn-pub-off { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; width: 100%; padding: 10px; border-radius: 6px; font-weight: 700; cursor: pointer; }
+.btn-pub-on { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; width: 100%; padding: 10px; border-radius: 6px; font-weight: 700; cursor: pointer; }
