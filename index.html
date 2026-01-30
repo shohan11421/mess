@@ -62,7 +62,14 @@
                         <input type="text" id="bazarItem" placeholder="Item name">
                         <input type="number" id="bazarPrice" placeholder="Price">
                     </div>
-                    <button onclick="addBazar()" class="btn-primary">Save Entry</button>
+                    <div class="input-group admin-only" style="display:none; margin-top:10px;">
+                        <select id="bazarDateType" onchange="toggleBazarAdminDate()">
+                            <option value="today">Today</option>
+                            <option value="custom">Custom Date</option>
+                        </select>
+                        <input type="date" id="bazarDate" style="display:none; margin-top:5px;">
+                    </div>
+                    <button onclick="addBazar()" class="btn-primary" style="margin-top:10px;">Save Entry</button>
                 </div>
                 <div class="admin-layout">
                     <aside class="admin-sidebar">
