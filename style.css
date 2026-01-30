@@ -10,19 +10,21 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; paddi
 /* Sidebar Logic */
 .admin-layout { display: flex; gap: 15px; }
 .admin-sidebar { width: 160px; flex-shrink: 0; }
+.admin-sidebar h4 { font-size: 12px; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px; }
 .member-nav button { width: 100%; text-align: left; padding: 12px; margin-bottom: 8px; background: white; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; }
 .member-nav button.active { border: 2px solid var(--accent); color: var(--accent); }
 .admin-main { flex-grow: 1; min-width: 0; }
 .admin-data-header { background: #1e293b; color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
 .admin-data-header h3 { margin: 0; font-size: 15px; color: white; }
+.admin-grid-view { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
 /* Summary Table Matching Image */
-.summary-black-card { background: #1e293b; color: white; padding: 35px 15px; border-radius: 12px 12px 0 0; text-align: center; }
+.summary-black-card { background: #1a2233; color: white; padding: 35px 15px; border-radius: 12px 12px 0 0; text-align: center; }
 .summary-black-card p { margin: 0; font-size: 14px; opacity: 0.9; }
 .summary-black-card b { font-size: 16px; }
-.table-container { background: white; border-radius: 0 0 12px 12px; border: 1px solid var(--border); border-top: none; padding: 5px; }
+.table-container { background: white; border-radius: 0 0 12px 12px; border: 1px solid var(--border); border-top: none; padding: 5px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
 .summary-table { width: 100%; border-collapse: collapse; }
-.summary-table th { padding: 15px 5px; font-size: 10px; color: #94a3b8; border-bottom: 1px solid #f1f5f9; }
+.summary-table th { padding: 15px 5px; font-size: 10px; color: #94a3b8; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
 .summary-table td { padding: 15px 5px; text-align: center; font-size: 14px; border-bottom: 1px solid #f8fafc; }
 .name-cell { font-weight: 800; color: #1e293b; text-align: left !important; padding-left: 15px !important; }
 
@@ -31,6 +33,7 @@ input, select { width: 100%; padding: 12px; border: 1px solid var(--border); bor
 .input-group { display: flex; gap: 10px; }
 .btn-primary { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 700; }
 .btn-logout { background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 700; }
+.btn-del-mini { background: #fee2e2; color: #b91c1c; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
 .pro-table { width: 100%; border-collapse: collapse; text-align: center; }
 .pro-table th { padding: 10px; font-size: 11px; border-bottom: 2px solid var(--border); }
 .pro-table td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
@@ -38,10 +41,12 @@ input, select { width: 100%; padding: 12px; border: 1px solid var(--border); bor
 .bazar-info b { display: block; font-size: 14px; }
 .bazar-info span { font-size: 11px; color: #94a3b8; }
 .admin-scroll { max-height: 400px; overflow-y: auto; }
+.btn-all-list { width: 100%; padding: 10px; margin-top: 10px; background: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     .admin-layout { flex-direction: column; }
     .admin-sidebar { width: 100%; }
-    .member-nav { display: flex; overflow-x: auto; gap: 5px; }
-    .member-nav button { width: auto; white-space: nowrap; }
+    .member-nav { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 5px; }
+    .member-nav button { width: auto; white-space: nowrap; margin-bottom: 0; }
+    .admin-grid-view { grid-template-columns: 1fr; }
 }
