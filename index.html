@@ -6,6 +6,13 @@
     <title>Engineers_Hub Mess Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        .btn-green { background: #10b981; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-whatsapp { background: #25d366; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-flex { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
+        @media (max-width: 480px) { .btn-flex button { flex: 1; font-size: 12px; padding: 12px 5px; } }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -63,15 +70,13 @@
                 <div class="card">
                     <h3>Bazar Schedule</h3>
                     <div id="bazarScheduleList" class="schedule-grid" style="margin-bottom: 15px;"></div>
-                    
                     <div class="admin-only" style="display:none; border-top:1px solid #eee; padding-top:15px;">
                         <h4 style="margin-bottom:10px">Assign Bazar Duty</h4>
                         <div class="input-group">
                             <input type="date" id="scheduleDate">
                             <select id="scheduleMember"></select>
                         </div>
-                        <input type="text" id="scheduleItems" placeholder="Items to bring (e.g. 2kg Chicken, Potato, Oil)" style="margin-top:5px; width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box;">
-                        
+                        <input type="text" id="scheduleItems" placeholder="Items to bring..." style="margin-top:5px; width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box;">
                         <button onclick="saveSchedule()" class="btn-primary" style="background:var(--accent); margin-top:8px; width:100%;">Update Schedule</button>
                     </div>
                 </div>
@@ -88,9 +93,7 @@
                 </div>
 
                 <div class="admin-layout">
-                    <aside class="admin-sidebar">
-                        <div id="bazarMemberNav" class="member-nav"></div>
-                    </aside>
+                    <aside class="admin-sidebar"><div id="bazarMemberNav" class="member-nav"></div></aside>
                     <main class="admin-main">
                         <div class="card"><div id="bazarListContent" class="admin-scroll"></div></div>
                     </main>
@@ -105,9 +108,12 @@
                 <div class="card">
                     <div class="admin-data-header"><h3>Monthly Bill Records</h3></div>
                     <div id="billsContent" class="table-container" style="overflow-x: auto;"></div>
-                    <div style="margin-top:20px; display:flex; gap:10px;">
-                        <button onclick="saveMonthlyBills()" class="btn-primary">Save All Records</button>
-                        <button onclick="window.print()" class="btn-primary" style="background:#64748b">Print PDF</button>
+                    
+                    <div class="btn-flex">
+                        <button onclick="saveMonthlyBills()" class="btn-primary" style="flex:2">💾 Save Cloud</button>
+                        <button onclick="window.printPDF(false)" class="btn-primary" style="background:#64748b">📥 PDF</button>
+                        <button onclick="window.printPDF(true)" class="btn-green">📤 Share</button>
+                        <button onclick="window.shareAsText()" class="btn-whatsapp">💬 WA</button>
                     </div>
                 </div>
             </div>
@@ -126,9 +132,9 @@
             </div>
         </div>
     </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 </html>
-
