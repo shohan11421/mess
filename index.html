@@ -85,6 +85,24 @@
 
             <div id="summary" class="tab-content" style="display:none">
                 <div id="summaryContent"></div>
+                <div id="finalSettlementWrapper" style="display:none; margin-top: 30px;">
+    <div class="admin-data-header" style="background: #059669; border-radius: 12px 12px 0 0;">
+        <h3 style="color: white; margin: 0;">Final Settlement Table</h3>
+    </div>
+    <div class="table-container" style="border: 2px solid #059669; border-top: none; background: white;">
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th style="text-align:left; padding-left:15px;">MEMBER</th>
+                    <th>MEAL BAL (A)</th>
+                    <th>OTHER BILLS (B)</th>
+                    <th>NET PAYABLE</th>
+                </tr>
+            </thead>
+            <tbody id="finalSettlementBody"></tbody>
+        </table>
+    </div>
+</div>
             </div>
 
             <div id="admin" class="tab-content" style="display:none">
@@ -105,35 +123,12 @@
                                 <div class="admin-scroll"><table class="pro-table mini-table"><tbody id="adminBazarBody"></tbody></table></div>
                             </div>
                         </div>
-                        <div class="card admin-card" style="margin-top: 20px; border-top: 4px solid #10b981;">
-    <div class="card-header"><h4>Utilities & Rent (Fixed Costs)</h4></div>
-    <div class="input-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px;">
-        <input type="number" id="rent" placeholder="Room Rent">
-        <input type="number" id="wifi" placeholder="Wifi Bill">
-        <input type="number" id="gas" placeholder="Gas Bill">
-        <input type="number" id="electricity" placeholder="Electricity">
-        <input type="number" id="khala" placeholder="Khala Bill">
-    </div>
-    <button onclick="calculateFinalSettlement()" class="btn-primary" style="background: #10b981;">Calculate Final Dues</button>
-</div>
-
-<div id="settlementSection" class="card" style="display:none; margin-top: 20px; border: 2px solid #10b981; padding: 0; overflow: hidden;">
-    <div class="admin-data-header" style="background: #059669; border-radius: 0;">
-        <h3 style="color: white; margin: 0;">Final Monthly Settlement</h3>
-    </div>
-    <div style="overflow-x:auto">
-        <table class="summary-table">
-            <thead>
-                <tr>
-                    <th style="text-align:left; padding-left:15px;">MEMBER</th>
-                    <th>FIXED (A)</th>
-                    <th>MEAL BAL (B)</th>
-                    <th>FINAL PAY</th>
-                </tr>
-            </thead>
-            <tbody id="settlementBody"></tbody>
-        </table>
-    </div>
+                        <div class="card admin-card" style="border-top: 4px solid #f59e0b;">
+    <div class="card-header"><h4>Publication Settings</h4></div>
+    <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">Toggle visibility of the Final Settlement table for members.</p>
+    <button id="publishBtn" onclick="toggleSettlement()" class="btn-primary" style="background: #f59e0b;">
+        Show Final Settlement: OFF
+    </button>
 </div>
                     </main>
                 </div>
@@ -143,4 +138,5 @@
     <script type="module" src="app.js"></script>
 </body>
 </html>
+
 
