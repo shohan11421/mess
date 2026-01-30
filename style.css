@@ -7,15 +7,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; paddi
 .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; color: #64748b; font-weight: 600; background: transparent; white-space: nowrap; }
 .tab-btn.active { background: white; color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 
-/* Input Styles */
-input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; }
-.input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+input, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; }
+.input-group { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+.input-group div { width: 100%; }
 .input-group input, .input-group select { margin-bottom: 0; }
-
-/* Billing Table Inputs */
-.mini-input { width: 60px !important; padding: 6px 2px !important; text-align: center; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; margin: 0 !important; }
-input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-input[type=number] { -moz-appearance: textfield; }
 
 .summary-table { width: 100%; border-collapse: collapse; min-width: 600px; }
 .summary-table th { padding: 12px 5px; font-size: 10px; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; }
@@ -25,10 +20,8 @@ input[type=number] { -moz-appearance: textfield; }
 .btn-primary { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 700; }
 .btn-logout { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; }
 
-/* Tables and Admin Scrolls */
 .pro-table { width: 100%; border-collapse: collapse; }
-.admin-scroll { max-height: 400px; overflow-y: auto; }
-.bazar-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+.bazar-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; }
 
 @media print {
     .tabs, .dashboard-header, .btn-primary, .admin-sidebar { display: none !important; }
