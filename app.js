@@ -10,6 +10,28 @@ let currentUser = null, isAdmin = false, selectedAdminMember = null, selectedBaz
 const getToday = () => new Date().toLocaleDateString('en-CA');
 const getTomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toLocaleDateString('en-CA'); };
 
+// --- 1. THE GOLDEN PRECISION ENGINE ---
+// Calculates everything using raw decimals to prevent rounding drift
+function getMemberMath(m, mList, bList) {
+    const totalBazar = bList.reduce((s, b) => s + b.price, 0);
+    const totalMeals = mList.length;
+    const rawRate = totalMeals > 0 ? (totalBazar / totalMeals) : 0;
+    
+    const memberMeals = mList.filter(ml => ml.member === m).length;
+    const memberPaid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
+    
+    const memberCost = memberMeals * rawRate;
+    const rawBalance = memberPaid - memberCost;
+
+    return {
+        meals: memberMeals,
+        paid: memberPaid,
+        rawCost: memberCost,
+        rawBalance: rawBalance,
+        rateDisplay: rawRate.toFixed(2)
+    };
+}
+
 // --- DATA FETCHING ---
 window.fetchData = async () => {
     const monthVal = document.getElementById("viewMonth").value;
@@ -86,46 +108,43 @@ window.deleteSchedule = async (date) => {
     }
 };
 
-// --- RENDERING & LOGIC ---
+// --- RENDERING LOGIC ---
 function renderSummary(mList, bList) {
     const totalBazar = bList.reduce((s, b) => s + b.price, 0);
     const totalMeals = mList.length;
-    // MATH FIX: Force Number type after toFixed
-    const rate = totalMeals ? Number((totalBazar / totalMeals).toFixed(2)) : 0;
-    
-    let html = `<div class="card" style="background:#1e293b; color:white"><p>Total Bazar: <b>${totalBazar}৳</b> | Meals: <b>${totalMeals}</b> | Rate: <b>${rate}৳</b></p></div><table class="summary-table"><thead><tr><th>Member</th><th>Meals</th><th>Cost</th><th>Paid</th><th>Balance</th></tr></thead><tbody>`;
+    let netSurplus = 0, netOwed = 0;
+
+    let html = `<div class="card" style="background:#1e293b; color:white"><p>Total Bazar: <b>${totalBazar}৳</b> | Meals: <b>${totalMeals}</b> | Rate: <b>${(totalMeals ? totalBazar/totalMeals : 0).toFixed(2)}৳</b></p></div><table class="summary-table"><thead><tr><th>Member</th><th>Meals</th><th>Cost</th><th>Paid</th><th>Balance</th></tr></thead><tbody>`;
     
     membersList.forEach(m => {
-        const meals = mList.filter(ml => ml.member === m).length;
-        const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
-        const cost = Number((meals * rate).toFixed(2));
-        const bal = Number((paid - cost).toFixed(2));
-        html += `<tr><td class="name-cell">${m}</td><td>${meals}</td><td>${cost}৳</td><td>${paid}৳</td><td style="color:${bal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">${bal}৳</td></tr>`;
+        const stats = getMemberMath(m, mList, bList);
+        const bal = Number(stats.rawBalance.toFixed(2));
+        if (bal > 0) netSurplus += bal; else netOwed += Math.abs(bal);
+
+        html += `<tr><td class="name-cell">${m}</td><td>${stats.meals}</td><td>${stats.rawCost.toFixed(2)}৳</td><td>${stats.paid}৳</td><td style="color:${bal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">${bal}৳</td></tr>`;
     });
-    document.getElementById("summaryContent").innerHTML = html + "</tbody></table>";
+
+    // Zero-Sum Audit Footer
+    html += `</tbody><tfoot style="background: #f8fafc; font-size: 0.8em;"><tr><td colspan="5" style="text-align:center; padding: 10px; color: #64748b;">Audit: Surplus (${netSurplus.toFixed(2)}৳) vs Owed (${netOwed.toFixed(2)}৳)</td></tr></tfoot></table>`;
+    document.getElementById("summaryContent").innerHTML = html;
 }
 
 window.renderBillsTab = (mList, bList, savedBills) => {
-    const totalBazar = bList.reduce((s, b) => s + b.price, 0);
-    const totalMeals = mList.length;
-    const rate = totalMeals ? (totalBazar / totalMeals) : 0;
-
     let html = `<table class="summary-table" id="printableTable"><thead><tr><th>Member</th><th>Rent</th><th>Wifi</th><th>Gas</th><th>Elec</th><th>Khala</th><th>Meal Bal</th><th>Total</th></tr></thead><tbody>`;
     
     membersList.forEach(m => {
-        const meals = mList.filter(ml => ml.member === m).length;
-        const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
-        const bal = Number((paid - (meals * rate)).toFixed(2));
+        const stats = getMemberMath(m, mList, bList);
         const s = savedBills.find(sb => sb.member === m) || {};
+        const mealBal = Number(stats.rawBalance.toFixed(2));
         
         html += `<tr><td class="name-cell">${m}</td>
-            <td><input type="number" id="rent-${m}" value="${s.rent || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
-            <td><input type="number" id="wifi-${m}" value="${s.wifi || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
-            <td><input type="number" id="gas-${m}" value="${s.gas || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
-            <td><input type="number" id="elec-${m}" value="${s.elec || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
-            <td><input type="number" id="khala-${m}" value="${s.khala || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
-            <td style="font-weight:bold; color:${bal>=0?'#10b981':'#ef4444'}"><span id="status-val-${m}" data-bal="${bal}">${bal}</span>৳</td>
-            <td id="final-${m}" style="font-weight:900;">${s.total_payable || '0.00'}৳</td></tr>`;
+            <td><input type="number" id="rent-${m}" value="${s.rent || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${mealBal})"></td>
+            <td><input type="number" id="wifi-${m}" value="${s.wifi || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${mealBal})"></td>
+            <td><input type="number" id="gas-${m}" value="${s.gas || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${mealBal})"></td>
+            <td><input type="number" id="elec-${m}" value="${s.elec || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${mealBal})"></td>
+            <td><input type="number" id="khala-${m}" value="${s.khala || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${mealBal})"></td>
+            <td style="font-weight:bold; color:${mealBal>=0?'#10b981':'#ef4444'}"><span id="status-val-${m}" data-bal="${mealBal}">${mealBal}</span>৳</td>
+            <td id="final-${m}" style="font-weight:900;">${s.total_payable || '0'}৳</td></tr>`;
     });
     document.getElementById("billsContent").innerHTML = html + "</tbody></table>";
 };
@@ -133,30 +152,33 @@ window.renderBillsTab = (mList, bList, savedBills) => {
 window.calcPersonalBill = (m, mealBalance) => {
     const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
     const billsTotal = fields.reduce((sum, f) => sum + (Number(document.getElementById(`${f}-${m}`).value) || 0), 0);
-    // MATH FIX: Correct subtraction of meal balance
-    const final = Number((billsTotal - Number(mealBalance)).toFixed(2));
+    
+    // Final logic: Total Utilities - Meal Surplus (or + Debt)
+    const rawFinal = billsTotal - Number(mealBalance);
+    
+    // SMART ROUNDING: 0.5 threshold logic (Math.round handles >= 0.5 correctly)
+    const roundedFinal = Math.round(rawFinal);
+    
     const target = document.getElementById(`final-${m}`);
-    target.innerText = final + "৳";
-    target.style.color = final > 0 ? "#ef4444" : "#10b981";
+    target.innerText = roundedFinal + "৳";
+    target.style.color = roundedFinal > 0 ? "#ef4444" : "#10b981";
 };
 
 // --- ANDROID PDF PRINTING ---
 window.printPDF = () => {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for better table fit
+    const doc = new jsPDF('l', 'mm', 'a4'); 
     const month = document.getElementById("viewMonth").value;
 
     doc.setFontSize(18);
     doc.text(`Engineers_Hub Mess Bill - ${month}`, 14, 15);
 
-    // AutoTable plugin for Android PDF generation
     doc.autoTable({
         html: '#printableTable',
         startY: 25,
         theme: 'grid',
         styles: { fontSize: 9, cellPadding: 2 },
         headStyles: { fillColor: [30, 41, 59] },
-        // Important: Extract values from inputs which jsPDF normally misses
         didParseCell: function(data) {
             if (data.section === 'body' && data.column.index > 0 && data.column.index < 6) {
                 const member = membersList[data.row.index];
@@ -174,9 +196,8 @@ window.printPDF = () => {
 window.saveMonthlyBills = async () => {
     const month = document.getElementById("viewMonth").value;
     const updates = membersList.map(m => {
-        // SAFE MATH: Read from data attribute, not innerText
         const mealBal = Number(document.getElementById(`status-val-${m}`).dataset.bal) || 0;
-        const totalPayable = parseFloat(document.getElementById(`final-${m}`).innerText.replace('৳', '')) || 0;
+        const totalPayable = parseInt(document.getElementById(`final-${m}`).innerText.replace('৳', '')) || 0;
 
         return {
             month, member: m,
@@ -190,10 +211,10 @@ window.saveMonthlyBills = async () => {
         };
     });
     await supabase.from('monthly_bills').upsert(updates, { onConflict: 'month,member' });
-    alert("Records Saved to Cloud!");
+    alert("Cloud Update Successful!");
 };
 
-// --- UTILITY RENDERERS (Unchanged) ---
+// --- UTILITY RENDERERS ---
 function renderPersonalStats(mList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m)) || "User";
     const count = mList.filter(m => m.member === name).length;
