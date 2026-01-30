@@ -24,8 +24,67 @@ window.fetchData = async () => {
     renderCalendar(meals || [], monthVal);
     renderSummary(meals || [], bazar || []);
     renderBazarList(bazar || []);
+    
+    // Integrated: Render Bills Tab
+    renderBillsTab(meals || [], bazar || []);
+    
     if(isAdmin) renderAdmin(meals || [], bazar || []);
 };
+
+// --- NEW PERSONAL BILL LOGIC ---
+window.calcPersonalBill = (m, mealBalance) => {
+    const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
+    const billsTotal = fields.reduce((sum, f) => {
+        return sum + (Number(document.getElementById(`${f}-${m}`).value) || 0);
+    }, 0);
+
+    // Logic: Total Bills - Meal Status (Positive balance reduces bill)
+    const final = billsTotal - mealBalance;
+    
+    const target = document.getElementById(`final-${m}`);
+    target.innerText = final.toFixed(2) + "৳";
+    target.style.color = final > 0 ? "#ef4444" : "#10b981";
+};
+
+function renderBillsTab(mList, bList) {
+    const totalBazar = bList.reduce((s, b) => s + b.price, 0);
+    const totalMeals = mList.length;
+    const rate = totalMeals ? (totalBazar / totalMeals) : 0;
+
+    let html = `<table class="summary-table">
+        <thead>
+            <tr>
+                <th>Member</th>
+                <th>Rent</th>
+                <th>Wifi</th>
+                <th>Gas</th>
+                <th>Elec</th>
+                <th>Khala</th>
+                <th>Meal Bal</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    membersList.forEach(m => {
+        const meals = mList.filter(ml => ml.member === m).length;
+        const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
+        const bal = Number((paid - (meals * rate)).toFixed(2));
+
+        html += `<tr>
+            <td class="name-cell">${m}</td>
+            <td><input type="number" id="rent-${m}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
+            <td><input type="number" id="wifi-${m}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
+            <td><input type="number" id="gas-${m}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
+            <td><input type="number" id="elec-${m}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
+            <td><input type="number" id="khala-${m}" class="mini-input" oninput="calcPersonalBill('${m}', ${bal})"></td>
+            <td style="font-weight:bold; color:${bal >= 0 ? '#10b981' : '#ef4444'}">${bal}</td>
+            <td id="final-${m}" style="font-weight:900;">0.00৳</td>
+        </tr>`;
+    });
+    document.getElementById("billsContent").innerHTML = html + "</tbody></table>";
+}
+// --- END NEW LOGIC ---
 
 function renderPersonalStats(mList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m)) || "User";
@@ -73,7 +132,7 @@ function renderBazarList(bList) {
 function renderCalendar(mList, monthYear) {
     const [y, m] = monthYear.split('-').map(Number);
     const days = new Date(y, m, 0).getDate();
-    let html = `<thead><tr><th>Day</th>${membersList.map(n => `<th>${n}</th>`).join('')}</tr></thead><tbody>`;
+    let html = `<thead><tr><th>Day</th>${membersList.map(n => `<th>${n[0]}</th>`).join('')}</tr></thead><tbody>`;
     for (let i = 1; i <= days; i++) {
         const dStr = `${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
         html += `<tr><td>${i}</td>${membersList.map(n => {
@@ -144,63 +203,13 @@ async function afterLogin() {
     }
     const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'User'}</option>`;
     document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
-    if(isAdmin) { document.getElementById("adminTabBtn").style.display = "block"; document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); }
-    fetchData();
+    
     if(isAdmin) { 
-    document.getElementById("adminTabBtn").style.display = "block"; 
-    document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); 
+        document.getElementById("adminTabBtn").style.display = "block"; 
+        // New tab button display
+        const billBtn = document.getElementById("adminBillBtn");
+        if(billBtn) billBtn.style.display = "block";
+        document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); 
+    }
+    fetchData();
 }
-
-}
-window.calculateMonthlyCost = async () => {
-    const rent = Number(document.getElementById("rentCost").value || 0);
-    const gas = Number(document.getElementById("gasCost").value || 0);
-    const elec = Number(document.getElementById("electricityCost").value || 0);
-    const wifi = Number(document.getElementById("wifiCost").value || 0);
-    const khala = Number(document.getElementById("khalaCost").value || 0);
-
-    const extraTotal = rent + gas + elec + wifi + khala;
-    const perHeadExtra = extraTotal / membersList.length;
-
-    const vMonth = document.getElementById("viewMonth").value;
-    const [y, m] = vMonth.split('-').map(Number);
-    const first = `${vMonth}-01`;
-    const last = `${vMonth}-${new Date(y, m, 0).getDate()}`;
-
-    const { data: meals } = await supabase.from('meals').select('*').gte('date', first).lte('date', last);
-    const { data: bazar } = await supabase.from('bazar').select('*').gte('date', first).lte('date', last);
-
-    const totalMeals = meals.length;
-    const totalBazar = bazar.reduce((s, b) => s + b.price, 0);
-    const mealRate = totalMeals ? totalBazar / totalMeals : 0;
-
-    let html = "";
-
-    membersList.forEach(m => {
-        const mMeals = meals.filter(x => x.member === m).length;
-        const mPaid = bazar.filter(x => x.member === m).reduce((s, b) => s + b.price, 0);
-        const mealCost = mMeals * mealRate;
-        const balance = mPaid - mealCost; // + = advance, - = due
-
-        // Core logic you requested
-        const finalAmount = balance >= 0
-            ? (perHeadExtra - balance)
-            : (perHeadExtra + Math.abs(balance));
-
-        html += `
-            <tr>
-                <td style="text-align:left;font-weight:700">${m}</td>
-                <td style="color:${balance>=0?'#10b981':'#ef4444'}">
-                    ${balance.toFixed(2)}৳
-                </td>
-                <td>${perHeadExtra.toFixed(2)}৳</td>
-                <td style="font-weight:800">
-                    ${finalAmount.toFixed(2)}৳
-                </td>
-            </tr>
-        `;
-    });
-
-    document.getElementById("monthlyCostBody").innerHTML = html;
-};
-
