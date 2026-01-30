@@ -59,8 +59,7 @@ window.addBazar = async () => {
     let date = isAdmin ? dateInput.value : getToday();
     if(item && price && date) { 
         await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]); 
-        document.getElementById("bazarItem").value=""; 
-        document.getElementById("bazarPrice").value=""; 
+        document.getElementById("bazarItem").value=""; document.getElementById("bazarPrice").value=""; 
         fetchData(); 
     } else { alert("Fill all fields"); }
 };
@@ -69,80 +68,136 @@ window.addBazar = async () => {
 window.saveSchedule = async () => {
     const date = document.getElementById("scheduleDate").value;
     const member = document.getElementById("scheduleMember").value;
-    const items = document.getElementById("scheduleItems").value; // Get the text field value
-    
-    if(!date || !member) return alert("Please select date and member.");
-
+    const items = document.getElementById("scheduleItems").value;
+    if(!date || !member) return alert("Select date and member.");
     try {
-        const { error } = await supabase.from('bazar_schedule').upsert([{ 
-            date, 
-            member, 
-            items_to_bring: items 
-        }], { onConflict: 'date' });
+        const { error } = await supabase.from('bazar_schedule').upsert([{ date, member, items_to_bring: items }], { onConflict: 'date' });
         if (error) throw error;
         alert(`Assigned ${member}`);
-        document.getElementById("scheduleItems").value = ""; // Clear text field
+        document.getElementById("scheduleItems").value = ""; 
         fetchData(); 
-    } catch (err) { alert("Failed: " + err.message); }
+    } catch (err) { alert("Error: " + err.message); }
 };
 
 window.deleteSchedule = async (date) => {
-    if(confirm(`Delete duty for ${date}?`)) {
-        const { error } = await supabase.from('bazar_schedule').delete().eq('date', date);
-        if (error) alert("Error: " + error.message);
+    if(confirm(`Remove schedule for ${date}?`)) {
+        await supabase.from('bazar_schedule').delete().eq('date', date);
         fetchData();
     }
 };
 
-function renderBazarSchedule(scheduleData) {
-    const container = document.getElementById("bazarScheduleList");
-    if (!container) return;
-    const today = getToday();
+// --- RENDERING & LOGIC ---
+function renderSummary(mList, bList) {
+    const totalBazar = bList.reduce((s, b) => s + b.price, 0);
+    const totalMeals = mList.length;
+    // MATH FIX: Force Number type after toFixed
+    const rate = totalMeals ? Number((totalBazar / totalMeals).toFixed(2)) : 0;
     
-    container.innerHTML = scheduleData.length ? scheduleData.slice(0, 6).map(s => `
-        <div class="schedule-item ${s.date === today ? 'duty-today' : ''}" style="position:relative; padding-top:15px;">
-            ${isAdmin ? `<button onclick="window.deleteSchedule('${s.date}')" style="position:absolute; top:2px; right:4px; border:none; background:none; color:#ef4444; font-weight:800; cursor:pointer; font-size:14px;">✕</button>` : ''}
-            <span>${s.date === today ? 'TODAY' : s.date.split('-').slice(1).join('/')}</span>
-            <b>${s.member}</b>
-            ${s.items_to_bring ? `<div style="font-size:9px; margin-top:4px; color:#64748b; line-height:1.1; border-top:1px solid #ddd; pt-2px;">${s.items_to_bring}</div>` : ''}
-        </div>
-    `).join('') : '<p style="grid-column: 1/-1; text-align:center; padding:10px;">No schedule assigned</p>';
+    let html = `<div class="card" style="background:#1e293b; color:white"><p>Total Bazar: <b>${totalBazar}৳</b> | Meals: <b>${totalMeals}</b> | Rate: <b>${rate}৳</b></p></div><table class="summary-table"><thead><tr><th>Member</th><th>Meals</th><th>Cost</th><th>Paid</th><th>Balance</th></tr></thead><tbody>`;
+    
+    membersList.forEach(m => {
+        const meals = mList.filter(ml => ml.member === m).length;
+        const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
+        const cost = Number((meals * rate).toFixed(2));
+        const bal = Number((paid - cost).toFixed(2));
+        html += `<tr><td class="name-cell">${m}</td><td>${meals}</td><td>${cost}৳</td><td>${paid}৳</td><td style="color:${bal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">${bal}৳</td></tr>`;
+    });
+    document.getElementById("summaryContent").innerHTML = html + "</tbody></table>";
 }
 
-function updateDailyNotification(scheduleData) {
-    const alertDiv = document.getElementById("bazarAlert");
-    const nameEl = document.getElementById("todayBazarMember");
-    const today = getToday();
-    const todayDuty = scheduleData.find(s => s.date === today);
-    
-    if (todayDuty) {
-        alertDiv.style.display = "block";
-        nameEl.innerHTML = `${todayDuty.member} ${todayDuty.items_to_bring ? `<br><span style="font-size:12px; font-weight:400; color:#92400e;">🛒 To Bring: ${todayDuty.items_to_bring}</span>` : ''}`;
-    } else {
-        alertDiv.style.display = "none";
-    }
-}
+window.renderBillsTab = (mList, bList, savedBills) => {
+    const totalBazar = bList.reduce((s, b) => s + b.price, 0);
+    const totalMeals = mList.length;
+    const rate = totalMeals ? (totalBazar / totalMeals) : 0;
 
-// --- REMAINING RENDERING LOGIC ---
+    let html = `<table class="summary-table" id="printableTable"><thead><tr><th>Member</th><th>Rent</th><th>Wifi</th><th>Gas</th><th>Elec</th><th>Khala</th><th>Meal Bal</th><th>Total</th></tr></thead><tbody>`;
+    
+    membersList.forEach(m => {
+        const meals = mList.filter(ml => ml.member === m).length;
+        const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
+        const bal = Number((paid - (meals * rate)).toFixed(2));
+        const s = savedBills.find(sb => sb.member === m) || {};
+        
+        html += `<tr><td class="name-cell">${m}</td>
+            <td><input type="number" id="rent-${m}" value="${s.rent || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
+            <td><input type="number" id="wifi-${m}" value="${s.wifi || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
+            <td><input type="number" id="gas-${m}" value="${s.gas || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
+            <td><input type="number" id="elec-${m}" value="${s.elec || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
+            <td><input type="number" id="khala-${m}" value="${s.khala || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
+            <td style="font-weight:bold; color:${bal>=0?'#10b981':'#ef4444'}"><span id="status-val-${m}" data-bal="${bal}">${bal}</span>৳</td>
+            <td id="final-${m}" style="font-weight:900;">${s.total_payable || '0.00'}৳</td></tr>`;
+    });
+    document.getElementById("billsContent").innerHTML = html + "</tbody></table>";
+};
+
+window.calcPersonalBill = (m, mealBalance) => {
+    const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
+    const billsTotal = fields.reduce((sum, f) => sum + (Number(document.getElementById(`${f}-${m}`).value) || 0), 0);
+    // MATH FIX: Correct subtraction of meal balance
+    const final = Number((billsTotal - Number(mealBalance)).toFixed(2));
+    const target = document.getElementById(`final-${m}`);
+    target.innerText = final + "৳";
+    target.style.color = final > 0 ? "#ef4444" : "#10b981";
+};
+
+// --- ANDROID PDF PRINTING ---
+window.printPDF = () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for better table fit
+    const month = document.getElementById("viewMonth").value;
+
+    doc.setFontSize(18);
+    doc.text(`Engineers_Hub Mess Bill - ${month}`, 14, 15);
+
+    // AutoTable plugin for Android PDF generation
+    doc.autoTable({
+        html: '#printableTable',
+        startY: 25,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [30, 41, 59] },
+        // Important: Extract values from inputs which jsPDF normally misses
+        didParseCell: function(data) {
+            if (data.section === 'body' && data.column.index > 0 && data.column.index < 6) {
+                const member = membersList[data.row.index];
+                const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
+                const fieldName = fields[data.column.index - 1];
+                const inputVal = document.getElementById(`${fieldName}-${member}`).value;
+                data.cell.text = inputVal || '0';
+            }
+        }
+    });
+
+    doc.save(`Mess_Bill_${month}.pdf`);
+};
+
+window.saveMonthlyBills = async () => {
+    const month = document.getElementById("viewMonth").value;
+    const updates = membersList.map(m => {
+        // SAFE MATH: Read from data attribute, not innerText
+        const mealBal = Number(document.getElementById(`status-val-${m}`).dataset.bal) || 0;
+        const totalPayable = parseFloat(document.getElementById(`final-${m}`).innerText.replace('৳', '')) || 0;
+
+        return {
+            month, member: m,
+            rent: Number(document.getElementById(`rent-${m}`).value) || 0,
+            wifi: Number(document.getElementById(`wifi-${m}`).value) || 0,
+            gas: Number(document.getElementById(`gas-${m}`).value) || 0,
+            elec: Number(document.getElementById(`elec-${m}`).value) || 0,
+            khala: Number(document.getElementById(`khala-${m}`).value) || 0,
+            meal_balance: mealBal,
+            total_payable: totalPayable
+        };
+    });
+    await supabase.from('monthly_bills').upsert(updates, { onConflict: 'month,member' });
+    alert("Records Saved to Cloud!");
+};
+
+// --- UTILITY RENDERERS (Unchanged) ---
 function renderPersonalStats(mList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m)) || "User";
     const count = mList.filter(m => m.member === name).length;
     document.getElementById("personalStats").innerHTML = `User: <b>${name}</b> | Meals: <b>${count}</b>`;
-}
-
-function renderSummary(mList, bList) {
-    const totalBazar = bList.reduce((s, b) => s + b.price, 0);
-    const totalMeals = mList.length;
-    const rate = totalMeals ? (totalBazar / totalMeals).toFixed(2) : 0;
-    let html = `<div class="card" style="background:#1e293b; color:white"><p>Total Bazar: <b>${totalBazar}৳</b> | Meals: <b>${totalMeals}</b> | Rate: <b>${rate}৳</b></p></div><table class="summary-table"><thead><tr><th>Member</th><th>Meals</th><th>Cost</th><th>Paid</th><th>Balance</th></tr></thead><tbody>`;
-    membersList.forEach(m => {
-        const meals = mList.filter(ml => ml.member === m).length;
-        const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
-        const cost = (meals * rate).toFixed(2);
-        const bal = (paid - cost).toFixed(2);
-        html += `<tr><td class="name-cell">${m}</td><td>${meals}</td><td>${cost}৳</td><td>${paid}৳</td><td style="color:${bal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">${bal}৳</td></tr>`;
-    });
-    document.getElementById("summaryContent").innerHTML = html + "</tbody></table>";
 }
 
 function renderBazarList(bList) {
@@ -165,54 +220,30 @@ function renderCalendar(mList, monthYear) {
     document.getElementById("mealCalendar").innerHTML = html + "</tbody>";
 }
 
-window.calcPersonalBill = (m, mealBalance) => {
-    const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
-    const billsTotal = fields.reduce((sum, f) => sum + (Number(document.getElementById(`${f}-${m}`).value) || 0), 0);
-    const final = billsTotal - mealBalance;
-    const target = document.getElementById(`final-${m}`);
-    target.innerText = final.toFixed(2) + "৳";
-    target.style.color = final > 0 ? "#ef4444" : "#10b981";
-};
+function renderBazarSchedule(scheduleData) {
+    const container = document.getElementById("bazarScheduleList");
+    if (!container) return;
+    const today = getToday();
+    container.innerHTML = scheduleData.length ? scheduleData.slice(0, 6).map(s => `
+        <div class="schedule-item ${s.date === today ? 'duty-today' : ''}" style="position:relative; padding-top:15px;">
+            ${isAdmin ? `<button onclick="window.deleteSchedule('${s.date}')" style="position:absolute; top:2px; right:4px; border:none; background:none; color:#ef4444; font-weight:800; cursor:pointer;">✕</button>` : ''}
+            <span>${s.date === today ? 'TODAY' : s.date.split('-').slice(1).join('/')}</span>
+            <b>${s.member}</b>
+            ${s.items_to_bring ? `<div style="font-size:9px; margin-top:4px; color:#64748b; border-top:1px solid #ddd; pt-2px;">${s.items_to_bring}</div>` : ''}
+        </div>
+    `).join('') : '<p style="text-align:center; padding:10px;">No schedule</p>';
+}
 
-window.saveMonthlyBills = async () => {
-    const month = document.getElementById("viewMonth").value;
-    const updates = membersList.map(m => {
-        const mealBal = Number(document.getElementById(`status-val-${m}`).innerText) || 0;
-        return {
-            month, member: m,
-            rent: Number(document.getElementById(`rent-${m}`).value) || 0,
-            wifi: Number(document.getElementById(`wifi-${m}`).value) || 0,
-            gas: Number(document.getElementById(`gas-${m}`).value) || 0,
-            elec: Number(document.getElementById(`elec-${m}`).value) || 0,
-            khala: Number(document.getElementById(`khala-${m}`).value) || 0,
-            meal_balance: mealBal,
-            total_payable: parseFloat(document.getElementById(`final-${m}`).innerText)
-        };
-    });
-    await supabase.from('monthly_bills').upsert(updates, { onConflict: 'month,member' });
-    alert("Saved!");
-};
-
-window.renderBillsTab = (mList, bList, savedBills) => {
-    const totalBazar = bList.reduce((s, b) => s + b.price, 0);
-    const rate = mList.length ? (totalBazar / mList.length) : 0;
-    let html = `<table class="summary-table"><thead><tr><th>Member</th><th>Rent</th><th>Wifi</th><th>Gas</th><th>Elec</th><th>Khala</th><th>Meal Bal</th><th>Total</th></tr></thead><tbody>`;
-    membersList.forEach(m => {
-        const meals = mList.filter(ml => ml.member === m).length;
-        const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
-        const bal = Number((paid - (meals * rate)).toFixed(2));
-        const s = savedBills.find(sb => sb.member === m) || {};
-        html += `<tr><td class="name-cell">${m}</td>
-            <td><input type="number" id="rent-${m}" value="${s.rent || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
-            <td><input type="number" id="wifi-${m}" value="${s.wifi || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
-            <td><input type="number" id="gas-${m}" value="${s.gas || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
-            <td><input type="number" id="elec-${m}" value="${s.elec || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
-            <td><input type="number" id="khala-${m}" value="${s.khala || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${bal})"></td>
-            <td style="font-weight:bold; color:${bal>=0?'#10b981':'#ef4444'}"><span id="status-val-${m}">${bal}</span></td>
-            <td id="final-${m}" style="font-weight:900;">${s.total_payable || '0.00'}৳</td></tr>`;
-    });
-    document.getElementById("billsContent").innerHTML = html + "</tbody></table>";
-};
+function updateDailyNotification(scheduleData) {
+    const alertDiv = document.getElementById("bazarAlert");
+    const nameEl = document.getElementById("todayBazarMember");
+    const today = getToday();
+    const todayDuty = scheduleData.find(s => s.date === today);
+    if (todayDuty) {
+        alertDiv.style.display = "block";
+        nameEl.innerHTML = `${todayDuty.member} ${todayDuty.items_to_bring ? `<br><small style="font-weight:400">🛒 Bring: ${todayDuty.items_to_bring}</small>` : ''}`;
+    } else { alertDiv.style.display = "none"; }
+}
 
 window.renderAdmin = (meals, bazar) => {
     document.getElementById("adminMemberList").innerHTML = membersList.map(m => `<button class="${selectedAdminMember === m ? 'active' : ''}" onclick="window.filterAdminByMember('${m}')">${m}</button>`).join('');
