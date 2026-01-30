@@ -33,7 +33,14 @@
                 <div class="card">
                     <h3>Add Meal</h3>
                     <select id="mealMember"></select>
-                    <input type="date" id="mealDate" class="admin-only" style="display:none">
+                    
+                    <select id="mealDateType" onchange="toggleAdminDate()">
+                        <option value="today">Today</option>
+                        <option value="tomorrow">Tomorrow</option>
+                        <option value="custom" class="admin-only" style="display:none">Custom Date</option>
+                    </select>
+                    <input type="date" id="mealDate" class="admin-only" style="display:none; margin-top:10px;">
+                    
                     <input type="number" id="mealCount" value="1" min="1">
                     <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                 </div>
