@@ -83,18 +83,23 @@
 
             <div id="summary" class="tab-content" style="display:none">
                 <div id="summaryContent"></div>
+                
                 <div id="finalSettlementWrapper" style="display:none; margin-top: 30px;">
                     <div class="admin-data-header" style="background: #059669; border-radius: 12px 12px 0 0;">
                         <h3 style="color: white; margin: 0;">Final Monthly Settlement</h3>
                     </div>
-                    <div class="table-container" style="border: 2px solid #059669; border-top: none; background: white;">
-                        <table class="summary-table">
+                    <div class="table-container" style="border: 2px solid #059669; border-top: none; background: white; overflow-x: auto;">
+                        <table class="summary-table" style="min-width: 800px;">
                             <thead>
                                 <tr>
                                     <th style="text-align:left; padding-left:15px;">MEMBER</th>
-                                    <th>MEAL BAL (A)</th>
-                                    <th>OTHER BILLS (B)</th>
-                                    <th>NET PAYABLE</th>
+                                    <th>MEAL BAL</th>
+                                    <th>RENT</th>
+                                    <th>WIFI</th>
+                                    <th>GAS</th>
+                                    <th>ELECT</th>
+                                    <th>KHALA</th>
+                                    <th>FINAL PAY</th>
                                 </tr>
                             </thead>
                             <tbody id="finalSettlementBody"></tbody>
@@ -109,7 +114,7 @@
                         <h4>Manage</h4>
                         <div id="adminMemberList" class="member-nav"></div>
                         <div style="margin-top:20px;">
-                            <h4 style="font-size:10px;">Publication</h4>
+                            <h4>Publication</h4>
                             <button id="publishBtn" onclick="toggleSettlement()" class="btn-all-list" style="background: #fff7ed; border:1px solid #f59e0b; color:#b45309;">
                                 Show Settlement: OFF
                             </button>
