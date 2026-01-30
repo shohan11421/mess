@@ -277,7 +277,10 @@ async function afterLogin() {
 
     const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'User'}</option>`;
     document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
-    
+    const scheduleSelect = document.getElementById("scheduleMember");
+    if (scheduleSelect) {
+        scheduleSelect.innerHTML = membersList.map(m => `<option value="${m}">${m}</option>`).join('');
+    }
     if(isAdmin) { 
         document.getElementById("adminTabBtn").style.display = "block"; 
         document.getElementById("adminBillBtn").style.display = "block";
@@ -303,6 +306,31 @@ function updateDailyNotification(scheduleData) {
     }
 }
 
+// --- BAZAR SCHEDULE CORE LOGIC ---
+window.saveSchedule = async () => {
+    const date = document.getElementById("scheduleDate").value;
+    const member = document.getElementById("scheduleMember").value;
+    
+    if(!date || !member) {
+        return alert("Please select both a date and a member.");
+    }
+
+    try {
+        // This sends the data to your Supabase bazar_schedule table
+        const { error } = await supabase
+            .from('bazar_schedule')
+            .upsert([{ date, member }], { onConflict: 'date' });
+
+        if (error) throw error;
+
+        alert(`Successfully assigned ${member} for ${date}`);
+        fetchData(); // Refresh everything to show the new notification
+    } catch (err) {
+        console.error("Error saving schedule:", err.message);
+        alert("Failed to save schedule. Check console for details.");
+    }
+};
+
 // Modify your fetchData to handle the notification and schedule list
 const originalFetchData = window.fetchData;
 window.fetchData = async () => {
@@ -323,4 +351,5 @@ window.fetchData = async () => {
         renderBazarSchedule(schedule || []);
     }
 };
+
 
