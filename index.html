@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engineers_Hub Manager</title>
+    <title>Engineers_Hub Mess Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <div id="loginDiv" class="card login-card" style="display:none;">
-            <h2>Mess Login</h2>
+        <div id="loginDiv" class="card login-card" style="display:none; max-width:400px; margin: 80px auto;">
+            <h2 style="text-align:center">Mess Login</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button id="loginBtn" class="btn-primary">Sign In</button>
@@ -45,7 +45,7 @@
                     <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                 </div>
                 <div class="card">
-                    <div class="flex-between">
+                    <div class="flex-between" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
                         <h3>Meal Log</h3>
                         <select id="viewMonth" onchange="fetchData()" class="month-picker"></select>
                     </div>
@@ -61,6 +61,12 @@
                         <input type="text" id="bazarItem" placeholder="Item name">
                         <input type="number" id="bazarPrice" placeholder="Price (৳)">
                     </div>
+                    <select id="bazarDateType" class="admin-only" style="display:none; margin-bottom:12px;" onchange="toggleBazarAdminDate()">
+                        <option value="today">Today</option>
+                        <option value="custom">Custom Date</option>
+                    </select>
+                    <input type="date" id="bazarDate" class="admin-only" style="display:none; margin-bottom:12px;">
+                    
                     <button onclick="addBazar()" class="btn-primary">Save Entry</button>
                 </div>
 
@@ -88,14 +94,14 @@
                         <div id="adminMemberList" class="member-nav"></div>
                     </aside>
                     <main class="admin-main">
-                        <div class="admin-data-header"><h3 id="adminCurrentTitle">Select a member</h3></div>
+                        <div class="admin-data-header"><h3 id="adminCurrentTitle">Select Member</h3></div>
                         <div class="admin-grid-view">
                             <div class="card admin-card">
-                                <h4>Meals</h4>
+                                <div class="card-header"><h4>Meal Records</h4></div>
                                 <div class="admin-scroll"><table class="pro-table mini-table"><tbody id="adminMealBody"></tbody></table></div>
                             </div>
                             <div class="card admin-card">
-                                <h4>Bazar</h4>
+                                <div class="card-header"><h4>Bazar Records</h4></div>
                                 <div class="admin-scroll"><table class="pro-table mini-table"><tbody id="adminBazarBody"></tbody></table></div>
                             </div>
                         </div>
