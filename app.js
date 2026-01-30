@@ -5,48 +5,76 @@ const supabaseKey = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "MASUM"]; 
-let currentUser = null;
-let isAdmin = false;
-let selectedAdminMember = null;
-let selectedBazarMember = null;
+let currentUser = null, isAdmin = false, selectedAdminMember = null, selectedBazarMember = null;
 
 const getToday = () => new Date().toLocaleDateString('en-CA');
-const getTomorrow = () => {
-    const d = new Date(); d.setDate(d.getDate() + 1);
-    return d.toLocaleDateString('en-CA');
-};
-
-const showStatus = (msg, isError = false) => {
-    const el = document.createElement('div');
-    el.className = 'status-popup';
-    el.style.backgroundColor = isError ? '#ef4444' : '#10b981';
-    el.innerText = msg;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
-};
+const getTomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toLocaleDateString('en-CA'); };
 
 window.fetchData = async () => {
     const vMonth = document.getElementById("viewMonth");
     if (!vMonth || !vMonth.value) return;
     const monthVal = vMonth.value;
     const [year, mon] = monthVal.split('-').map(Number);
-    const firstDay = `${monthVal}-01`;
-    const lastDay = `${monthVal}-${new Date(year, mon, 0).getDate()}`;
+    const firstDay = `${monthVal}-01`, lastDay = `${monthVal}-${new Date(year, mon, 0).getDate()}`;
 
     const { data: meals } = await supabase.from('meals').select('*').gte('date', firstDay).lte('date', lastDay);
     const { data: bazar } = await supabase.from('bazar').select('*').gte('date', firstDay).lte('date', lastDay);
     
-    renderPersonalDashboard(meals || []);
+    renderPersonalStats(meals || []);
     renderCalendar(meals || [], monthVal);
     renderSummary(meals || [], bazar || []);
-    renderGlobalBazarList(bazar || []);
+    renderBazarList(bazar || []);
     if(isAdmin) renderAdmin(meals || [], bazar || []);
 };
 
-function renderPersonalDashboard(mList) {
+function renderPersonalStats(mList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m)) || "User";
     const count = mList.filter(m => m.member === name).length;
-    document.getElementById("personalStats").innerHTML = `User: <b>${name}</b> | Meals: <b>${count}</b>`;
+    document.getElementById("personalStats").innerHTML = `User: <b>${name}</b> | Your Meals: <b>${count}</b>`;
+}
+
+function renderSummary(mList, bList) {
+    const totalBazar = bList.reduce((s, b) => s + b.price, 0);
+    const totalMeals = mList.length;
+    const rate = totalMeals ? (totalBazar / totalMeals).toFixed(2) : 0;
+
+    let html = `
+        <div class="summary-black-card">
+            <p>Total Bazar: <b>${totalBazar}৳</b> | Total Meals: <b>${totalMeals}</b> | Rate: <b>${rate}৳</b></p>
+        </div>
+        <div class="table-container">
+            <table class="summary-table">
+                <thead>
+                    <tr><th>MEMBER</th><th>MEALS</th><th>COST</th><th>PAID</th><th>STATUS</th></tr>
+                </thead>
+                <tbody>`;
+
+    membersList.forEach(m => {
+        const meals = mList.filter(ml => ml.member === m).length;
+        const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
+        const cost = (meals * rate).toFixed(2);
+        const bal = (paid - cost).toFixed(2);
+        html += `
+            <tr>
+                <td class="name-cell">${m}</td>
+                <td>${meals}</td><td>${cost}৳</td><td>${paid}৳</td>
+                <td style="color:${bal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">${bal}৳</td>
+            </tr>`;
+    });
+    document.getElementById("summaryContent").innerHTML = html + "</tbody></table></div>";
+}
+
+function renderBazarList(bList) {
+    document.getElementById("bazarMemberNav").innerHTML = membersList.map(m => 
+        `<button class="${selectedBazarMember === m ? 'active' : ''}" onclick="filterBazarByMember('${m}')">${m}</button>`).join('');
+    
+    let display = (selectedBazarMember && selectedBazarMember !== 'ALL') ? bList.filter(b => b.member === selectedBazarMember) : bList;
+    document.getElementById("bazarCurrentViewTitle").innerText = selectedBazarMember === 'ALL' ? "All Records" : `Records: ${selectedBazarMember || 'Select'}`;
+    document.getElementById("bazarListContent").innerHTML = display.slice().reverse().map(b => `
+        <div class="bazar-row">
+            <div class="bazar-info"><b>${b.item}</b><span>${b.member} • ${b.date}</span></div>
+            <b>${b.price}৳</b>
+        </div>`).join('') || '<p style="text-align:center; padding:20px; color:#94a3b8">No records found</p>';
 }
 
 function renderCalendar(mList, monthYear) {
@@ -63,66 +91,51 @@ function renderCalendar(mList, monthYear) {
     document.getElementById("mealCalendar").innerHTML = html + "</tbody>";
 }
 
-function renderGlobalBazarList(bList) {
-    const name = membersList.find(m => currentUser.email.toUpperCase().includes(m));
-    const totalSpent = bList.reduce((s, b) => s + b.price, 0);
-    const userSpent = bList.filter(b => b.member === name).reduce((s, b) => s + b.price, 0);
-    document.getElementById("bazarStats").innerHTML = `<div class="stat-card"><span>Total</span><b>${totalSpent}৳</b></div><div class="stat-card"><span>Mine</span><b>${userSpent}৳</b></div>`;
-    document.getElementById("bazarMemberNav").innerHTML = membersList.map(m => `<button class="${selectedBazarMember === m ? 'active' : ''}" onclick="filterBazarByMember('${m}')">${m}</button>`).join('');
-    let display = (selectedBazarMember && selectedBazarMember !== 'ALL') ? bList.filter(b => b.member === selectedBazarMember) : bList;
-    document.getElementById("bazarCurrentViewTitle").innerText = selectedBazarMember === 'ALL' ? "All Expenses" : `Records: ${selectedBazarMember || 'Select Member'}`;
-    document.getElementById("bazarListContent").innerHTML = display.slice().reverse().map(b => `<div class="bazar-row"><div class="bazar-info"><b>${b.item}</b><span>${b.member} • ${b.date}</span></div><b>${b.price}৳</b></div>`).join('') || '<p>No records</p>';
-}
-
-function renderSummary(mList, bList) {
-    const totalBazar = bList.reduce((s, b) => s + b.price, 0);
-    const totalMeals = mList.length;
-    const rate = totalMeals ? (totalBazar / totalMeals).toFixed(2) : 0;
-    let html = `<div class="summary-header"><p>Rate: <b>${rate}৳</b> | Total: <b>${totalBazar}৳</b></p></div><table class="pro-table"><thead><tr><th>User</th><th>Meals</th><th>Cost</th><th>+/-</th></tr></thead><tbody>`;
-    membersList.forEach(m => {
-        const meals = mList.filter(ml => ml.member === m).length;
-        const paid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
-        const cost = (meals * rate).toFixed(2);
-        const bal = (paid - cost).toFixed(2);
-        html += `<tr><td><b>${m}</b></td><td>${meals}</td><td>${cost}৳</td><td style="color:${bal >= 0 ? '#10b981' : '#ef4444'}">${bal}৳</td></tr>`;
-    });
-    document.getElementById("summaryContent").innerHTML = html + "</tbody></table>";
-}
-
 function renderAdmin(meals, bazar) {
     document.getElementById("adminMemberList").innerHTML = membersList.map(m => `<button class="${selectedAdminMember === m ? 'active' : ''}" onclick="filterAdminByMember('${m}')">${m}</button>`).join('');
     if (!selectedAdminMember) return;
-    document.getElementById("adminCurrentTitle").innerText = `Editing: ${selectedAdminMember}`;
-    const fMeals = meals.filter(m => m.member === selectedAdminMember);
-    const fBazar = bazar.filter(b => b.member === selectedAdminMember);
-    const gMeals = fMeals.reduce((acc, curr) => { if (!acc[curr.date]) acc[curr.date] = { date: curr.date, count: 0 }; acc[curr.date].count++; return acc; }, {});
-    document.getElementById("adminMealBody").innerHTML = Object.values(gMeals).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(g => `<tr><td>${g.date}</td><td>${g.count}</td><td><button class="btn-del" onclick="adjustMeal('${selectedAdminMember}','${g.date}',-1)">-</button> <button class="btn-add" onclick="adjustMeal('${selectedAdminMember}','${g.date}',1)">+</button></td></tr>`).join('') || '<tr><td colspan="3">No Meals</td></tr>';
-    document.getElementById("adminBazarBody").innerHTML = fBazar.reverse().map(b => `<tr><td>${b.item}</td><td>${b.price}৳</td><td><button class="btn-del" onclick="del('bazar','${b.id}')">✕</button></td></tr>`).join('') || '<tr><td colspan="3">No Bazar</td></tr>';
+    const fM = meals.filter(m => m.member === selectedAdminMember), fB = bazar.filter(b => b.member === selectedAdminMember);
+    const gM = fM.reduce((acc, curr) => { acc[curr.date] = (acc[curr.date] || 0) + 1; return acc; }, {});
+    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button class="btn-del" onclick="adjustMeal('${selectedAdminMember}','${d}',-1)">-</button></td></tr>`).join('');
+    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td>${b.item}</td><td><button class="btn-del" onclick="del('bazar','${b.id}')">✕</button></td></tr>`).join('');
 }
 
 window.filterBazarByMember = (n) => { selectedBazarMember = n; fetchData(); };
 window.filterAdminByMember = (n) => { selectedAdminMember = n; fetchData(); };
-window.adjustMeal = async (m, d, c) => { if (c === 1) await supabase.from('meals').insert([{ member: m, date: d, added_by: currentUser.id }]); else { const { data } = await supabase.from('meals').select('id').eq('member', m).eq('date', d).limit(1); if (data.length) await supabase.from('meals').delete().eq('id', data[0].id); } fetchData(); };
-window.addMeal = async () => { const member = document.getElementById("mealMember").value; const count = parseInt(document.getElementById("mealCount").value); const dateType = document.getElementById("mealDateType").value; let date = (dateType === "tomorrow") ? getTomorrow() : (isAdmin && dateType === "custom" ? document.getElementById("mealDate").value : getToday()); await supabase.from('meals').insert(Array.from({length: count}, () => ({ member, date, added_by: currentUser.id }))); fetchData(); };
-window.addBazar = async () => { const item = document.getElementById("bazarItem").value; const price = Number(document.getElementById("bazarPrice").value); const member = document.getElementById("bazarMember").value; if(!item || !price) return; await supabase.from('bazar').insert([{ member, item, price, date: getToday(), added_by: currentUser.id }]); document.getElementById("bazarItem").value=""; document.getElementById("bazarPrice").value=""; fetchData(); };
-window.toggleAdminDate = () => { document.getElementById("mealDate").style.display = (document.getElementById("mealDateType").value === 'custom') ? 'block' : 'none'; };
-window.del = async (t, id) => { if(confirm("Delete?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
+window.addMeal = async () => {
+    const member = document.getElementById("mealMember").value, count = parseInt(document.getElementById("mealCount").value);
+    const dateType = document.getElementById("mealDateType").value;
+    let date = dateType === "tomorrow" ? getTomorrow() : (dateType === "custom" ? document.getElementById("mealDate").value : getToday());
+    await supabase.from('meals').insert(Array.from({length: count}, () => ({ member, date, added_by: currentUser.id })));
+    fetchData();
+};
+window.addBazar = async () => {
+    const item = document.getElementById("bazarItem").value, price = Number(document.getElementById("bazarPrice").value), member = document.getElementById("bazarMember").value;
+    if(item && price) { await supabase.from('bazar').insert([{ member, item, price, date: getToday(), added_by: currentUser.id }]); document.getElementById("bazarItem").value=""; document.getElementById("bazarPrice").value=""; fetchData(); }
+};
+window.openTab = (n) => { document.querySelectorAll(".tab-content").forEach(c => c.style.display="none"); document.getElementById(n).style.display="block"; document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); event.currentTarget.classList.add("active"); };
 window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
-window.openTab = (n) => { document.querySelectorAll(".tab-content").forEach(c => c.style.display="none"); document.getElementById(n).style.display="block"; document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); };
+window.toggleAdminDate = () => { document.getElementById("mealDate").style.display = document.getElementById("mealDateType").value === 'custom' ? 'block' : 'none'; };
+window.del = async (t, id) => { if(confirm("Delete?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
+window.adjustMeal = async (m, d, c) => { const { data } = await supabase.from('meals').select('id').eq('member', m).eq('date', d).limit(1); if (data.length) await supabase.from('meals').delete().eq('id', data[0].id); fetchData(); };
+
+document.addEventListener('DOMContentLoaded', () => {
+    supabase.auth.onAuthStateChange((event, session) => { if (session) { currentUser = session.user; afterLogin(); } else { document.getElementById("loginDiv").style.display = "block"; }});
+    document.getElementById("loginBtn").onclick = async () => { await supabase.auth.signInWithPassword({ email: document.getElementById("email").value, password: document.getElementById("password").value }); };
+});
 
 async function afterLogin() {
     isAdmin = (currentUser.email === "admin@mess.com");
     document.getElementById("loginDiv").style.display = "none";
     document.getElementById("appDiv").style.display = "block";
-    const vMonth = document.getElementById("viewMonth"); vMonth.innerHTML = "";
-    for(let i=0; i<3; i++) { let t = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1); let val = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`; let opt = document.createElement("option"); opt.value = val; opt.text = t.toLocaleString('default', { month: 'long', year: 'numeric' }); vMonth.appendChild(opt); }
-    const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'USER'}</option>`;
+    const vM = document.getElementById("viewMonth"); vM.innerHTML = "";
+    for(let i=0; i<3; i++) {
+        let t = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
+        let val = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`;
+        vM.innerHTML += `<option value="${val}">${t.toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`;
+    }
+    const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m))}</option>`;
     document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
     if(isAdmin) { document.getElementById("adminTabBtn").style.display = "block"; document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); }
     fetchData();
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    supabase.auth.onAuthStateChange((event, session) => { if (session) { currentUser = session.user; afterLogin(); } else { document.getElementById("loginDiv").style.display = "block"; }});
-    document.getElementById("loginBtn").onclick = async () => { const { error } = await supabase.auth.signInWithPassword({ email: document.getElementById("email").value, password: document.getElementById("password").value }); if(error) alert(error.message); };
-});
