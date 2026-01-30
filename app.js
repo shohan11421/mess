@@ -4,7 +4,7 @@ const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co';
 const supabaseKey = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ"; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "MASUM"];
+const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "SHOJIB", "MASUM"];
 let currentUser = null;
 let isAdmin = false;
 
@@ -189,3 +189,4 @@ document.addEventListener('DOMContentLoaded', () => {
         if(error) alert(error.message);
     };
 });
+
