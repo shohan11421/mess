@@ -56,3 +56,90 @@ input, select { width: 100%; padding: 12px; border: 1px solid var(--border); bor
     .admin-grid-view { grid-template-columns: 1fr; }
 }
 
+/* --- Personal Bills Tab Specific Styles --- */
+
+/* Small input styling for bill amounts */
+.mini-input {
+    width: 60px !important;
+    padding: 6px 4px !important;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    margin: 0 !important;
+    transition: border-color 0.2s;
+}
+
+.mini-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background-color: #f0f7ff;
+}
+
+/* Adjusting the bills table for readability */
+#billsContent .summary-table th {
+    padding: 12px 2px;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+}
+
+#billsContent .summary-table td {
+    padding: 10px 2px;
+}
+
+/* Color coding for final total */
+#billsContent [id^="final-"] {
+    font-family: 'Inter', sans-serif;
+    letter-spacing: -0.5px;
+}
+
+/* Print Optimization */
+@media print {
+    /* Hide navigation and UI controls when printing bills */
+    .tabs, 
+    .dashboard-header, 
+    .btn-primary, 
+    .admin-sidebar,
+    .btn-logout,
+    input[type="date"],
+    select { 
+        display: none !important; 
+    }
+
+    body {
+        background: white;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .card {
+        border: none;
+        padding: 0;
+    }
+
+    .tab-content {
+        display: block !important;
+    }
+
+    /* Only show the bills table if that's what we are printing */
+    #billsTab {
+        display: block !important;
+    }
+    
+    .summary-black-card {
+        background: #000 !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+    }
+}
+
+/* Responsive fix for the mini-table */
+@media (max-width: 600px) {
+    .table-container {
+        overflow-x: auto;
+    }
+}
