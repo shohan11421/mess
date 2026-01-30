@@ -9,6 +9,21 @@ let currentUser = null;
 let isAdmin = false;
 
 const getToday = () => new Date().toLocaleDateString('en-CA');
+const getTomorrow = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toLocaleDateString('en-CA');
+};
+
+// Status Notification UI
+const showStatus = (msg, isError = false) => {
+    const statusEl = document.createElement('div');
+    statusEl.className = 'status-popup';
+    statusEl.style.backgroundColor = isError ? '#ef4444' : '#10b981';
+    statusEl.innerText = msg;
+    document.body.appendChild(statusEl);
+    setTimeout(() => statusEl.remove(), 3000);
+};
 
 // --- DATA FETCHING ---
 window.fetchData = async () => {
@@ -27,11 +42,10 @@ window.fetchData = async () => {
     renderPersonalDashboard(meals || []);
     renderCalendar(meals || [], monthVal);
     renderSummary(meals || [], bazar || []);
-    renderGlobalBazarList(bazar || []); // Everyone sees this
+    renderGlobalBazarList(bazar || []);
     if(isAdmin) renderAdmin(meals || [], bazar || []);
 };
 
-// --- PERSONAL DASHBOARD ---
 function renderPersonalDashboard(mList) {
     const userEmail = currentUser.email.toUpperCase();
     const memberName = membersList.find(m => userEmail.includes(m)) || "User";
@@ -39,7 +53,6 @@ function renderPersonalDashboard(mList) {
     document.getElementById("personalStats").innerHTML = `User: <b>${memberName}</b> | Your Meals: <b>${userMeals}</b>`;
 }
 
-// --- UI RENDERING ---
 function renderCalendar(mList, monthYear) {
     const [y, m] = monthYear.split('-').map(Number);
     const days = new Date(y, m, 0).getDate();
@@ -83,10 +96,26 @@ function renderAdmin(meals, bazar) {
 window.addMeal = async () => {
     const member = document.getElementById("mealMember").value;
     const count = parseInt(document.getElementById("mealCount").value);
-    const date = (isAdmin && document.getElementById("mealDate").value) ? document.getElementById("mealDate").value : getToday();
+    const dateType = document.getElementById("mealDateType").value;
+    
+    let date;
+    if (isAdmin && dateType === "custom") {
+        date = document.getElementById("mealDate").value || getToday();
+    } else if (dateType === "tomorrow") {
+        date = getTomorrow();
+    } else {
+        date = getToday();
+    }
+
     const entries = Array.from({length: count}, () => ({ member, date, added_by: currentUser.id }));
-    await supabase.from('meals').insert(entries);
-    fetchData();
+    const { error } = await supabase.from('meals').insert(entries);
+    
+    if(!error) {
+        showStatus(`Success! Added ${count} meal(s) for ${date}`);
+        fetchData();
+    } else {
+        showStatus("Failed to save meal", true);
+    }
 };
 
 window.addBazar = async () => {
@@ -94,10 +123,22 @@ window.addBazar = async () => {
     const price = Number(document.getElementById("bazarPrice").value);
     const member = document.getElementById("bazarMember").value;
     const date = (isAdmin && document.getElementById("bazarDate").value) ? document.getElementById("bazarDate").value : getToday();
-    await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]);
-    document.getElementById("bazarItem").value = "";
-    document.getElementById("bazarPrice").value = "";
-    fetchData();
+    
+    const { error } = await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]);
+    
+    if(!error) {
+        showStatus("Bazar entry saved!");
+        document.getElementById("bazarItem").value = "";
+        document.getElementById("bazarPrice").value = "";
+        fetchData();
+    } else {
+        showStatus("Failed to save bazar", true);
+    }
+};
+
+window.toggleAdminDate = () => {
+    const type = document.getElementById("mealDateType").value;
+    document.getElementById("mealDate").style.display = (type === 'custom') ? 'block' : 'none';
 };
 
 window.del = async (t, id) => { if(confirm("Delete record?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
@@ -108,13 +149,11 @@ window.openTab = (n) => {
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
 };
 
-// --- INITIALIZATION ---
 async function afterLogin() {
     isAdmin = (currentUser.email === "admin@mess.com");
     document.getElementById("loginDiv").style.display = "none";
     document.getElementById("appDiv").style.display = "block";
     
-    // Month Dropdown Fix
     const vMonth = document.getElementById("viewMonth");
     vMonth.innerHTML = "";
     for(let i=0; i<3; i++) {
