@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mess Management Pro</title>
+    <title>Engineers_Hub Mess Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <div id="loginDiv" class="card login-card" style="display:none;">
-            <h2>Mess Login</h2>
+            <h2 style="text-align:center">Mess Login</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button id="loginBtn" class="btn-primary">Sign In</button>
@@ -50,34 +50,23 @@
                         <h3>Meal Log</h3>
                         <select id="viewMonth" onchange="fetchData()"></select>
                     </div>
-                    <div class="table-scroll">
-                        <table id="mealCalendar" class="pro-table"></table>
-                    </div>
+                    <div class="table-scroll"><table id="mealCalendar" class="pro-table"></table></div>
                 </div>
             </div>
 
             <div id="bazar" class="tab-content" style="display:none">
                 <div class="card">
-                    <h3>New Bazar Entry</h3>
+                    <h3>Bazar Entry</h3>
                     <select id="bazarMember"></select>
                     <div class="input-row">
-                        <input type="text" id="bazarItem" placeholder="Item name">
+                        <input type="text" id="bazarItem" placeholder="Item Name">
                         <input type="number" id="bazarPrice" placeholder="Price">
                     </div>
-                    <div class="admin-only" style="display:none;">
-                        <select id="bazarDateType" onchange="toggleBazarAdminDate()">
-                            <option value="today">Today</option>
-                            <option value="custom">Custom Date</option>
-                        </select>
-                        <input type="date" id="bazarDate" style="display:none;">
-                    </div>
-                    <button onclick="addBazar()" class="btn-primary">Add Record</button>
+                    <input type="date" id="bazarDate" class="admin-only" style="display:none;">
+                    <button onclick="addBazar()" class="btn-primary">Add Bazar</button>
                 </div>
-                <div class="card">
-                    <div id="bazarMemberNav" class="filter-nav"></div>
-                    <h4 id="bazarCurrentViewTitle">Records</h4>
-                    <div id="bazarListContent" class="bazar-list"></div>
-                </div>
+                <div id="bazarMemberNav" class="filter-nav"></div>
+                <div id="bazarListContent" class="bazar-list"></div>
             </div>
 
             <div id="summary" class="tab-content" style="display:none">
@@ -86,7 +75,10 @@
 
             <div id="billsTab" class="tab-content" style="display:none">
                 <div class="card">
-                    <h3>Utility & Final Bills</h3>
+                    <div class="flex-header">
+                        <h3>Utility & Final Bills</h3>
+                        <button onclick="saveMonthlyBills()" class="btn-primary" style="width:auto; padding:8px 15px; background:#10b981;">Save to Database</button>
+                    </div>
                     <div id="billsContent" class="table-scroll"></div>
                 </div>
             </div>
@@ -94,20 +86,9 @@
             <div id="admin" class="tab-content" style="display:none">
                 <div class="card">
                     <div id="adminMemberList" class="filter-nav"></div>
-                    <h3 id="adminCurrentTitle">Select Member</h3>
                     <div class="admin-grid">
-                        <div>
-                            <h4>Meals</h4>
-                            <table class="pro-table mini">
-                                <tbody id="adminMealBody"></tbody>
-                            </table>
-                        </div>
-                        <div>
-                            <h4>Bazar</h4>
-                            <table class="pro-table mini">
-                                <tbody id="adminBazarBody"></tbody>
-                            </table>
-                        </div>
+                        <div><h4>Meals</h4><table class="pro-table mini"><tbody id="adminMealBody"></tbody></table></div>
+                        <div><h4>Bazar</h4><table class="pro-table mini"><tbody id="adminBazarBody"></tbody></table></div>
                     </div>
                 </div>
             </div>
