@@ -249,3 +249,61 @@ input, select {
         position: static !important; /* Remove sticky so it doesn't overlap */
     }
 }
+
+/*Delete from here if things changes*/
+
+
+/* --- GLOBAL TABLE FIXES FOR MOBILE (Add to the bottom of your CSS) --- */
+@media (max-width: 600px) {
+    /* 1. Summary & Bills Table Fix */
+    .summary-table {
+        min-width: unset !important; /* Removes the 600px minimum */
+        width: 100% !important;
+        table-layout: fixed;        /* Forces it to stay within screen */
+    }
+
+    .summary-table th, 
+    .summary-table td {
+        padding: 8px 2px !important;
+        font-size: 10px !important;
+        word-wrap: break-word;
+    }
+
+    /* 2. Personal Bills Input Fix */
+    /* This stops the input boxes from pushing the table too wide */
+    .mini-input {
+        width: 100% !important;
+        padding: 4px !important;
+        font-size: 10px !important;
+        margin: 0 !important;
+        height: 25px;
+    }
+
+    /* 3. Name Cell Alignment */
+    /* Ensures member names in Summary/Bills don't take too much room */
+    .name-cell {
+        padding-left: 5px !important;
+        width: 60px !important;
+        font-size: 10px !important;
+    }
+
+    /* 4. Bazar Tab Optimization */
+    /* Makes sure the Bazar list looks clean on narrow screens */
+    .admin-layout {
+        display: flex;
+        flex-direction: column; /* Stack sidebar on top of list for mobile */
+    }
+
+    .member-nav {
+        display: flex;
+        overflow-x: auto;
+        gap: 5px;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+    }
+
+    .member-nav button {
+        flex: 0 0 auto; /* Keeps buttons from shrinking */
+        padding: 8px 12px;
+    }
+}
