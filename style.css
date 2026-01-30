@@ -1,34 +1,220 @@
-:root { --bg: #f8fafc; --primary: #1e293b; --accent: #3b82f6; --border: #e2e8f0; }
-body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: #334155; }
-.container { max-width: 900px; margin: 0 auto; }
-.card { background: white; border-radius: 12px; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
-.dashboard-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border); }
-.tabs { display: flex; gap: 5px; background: #f1f5f9; padding: 5px; border-radius: 12px; margin-bottom: 20px; overflow-x: auto; }
-.tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; color: #64748b; font-weight: 600; background: transparent; white-space: nowrap; }
-.tab-btn.active { background: white; color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+/* --- THEME VARIABLES --- */
+:root { 
+    --bg: #f8fafc; 
+    --primary: #1e293b; 
+    --accent: #3b82f6; 
+    --border: #e2e8f0; 
+    --text-main: #334155;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --danger: #ef4444;
+}
 
-input, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; }
-.input-group { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+/* --- BASE STYLES --- */
+body { 
+    font-family: 'Inter', sans-serif; 
+    background: var(--bg); 
+    margin: 0; 
+    padding: 10px; 
+    color: var(--text-main); 
+    line-height: 1.5;
+}
+
+.container { 
+    max-width: 1000px; /* Slightly wider for better desktop view */
+    margin: 0 auto; 
+}
+
+/* --- CARDS & HEADERS --- */
+.card { 
+    background: white; 
+    border-radius: 12px; 
+    padding: 20px; 
+    border: 1px solid var(--border); 
+    margin-bottom: 20px; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.dashboard-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: white; 
+    padding: 15px 20px; 
+    border-radius: 12px; 
+    margin-bottom: 15px; 
+    border: 1px solid var(--border); 
+}
+
+/* --- NAVIGATION TABS --- */
+.tabs { 
+    display: flex; 
+    gap: 5px; 
+    background: #f1f5f9; 
+    padding: 5px; 
+    border-radius: 12px; 
+    margin-bottom: 20px; 
+    overflow-x: auto; /* Critical for mobile */
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+}
+
+.tabs::-webkit-scrollbar { display: none; } /* Hide scrollbar Chrome/Safari */
+
+.tab-btn { 
+    flex: 1; 
+    padding: 12px 15px; 
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    color: var(--text-muted); 
+    font-weight: 600; 
+    background: transparent; 
+    white-space: nowrap; 
+    transition: all 0.2s ease;
+}
+
+.tab-btn.active { 
+    background: white; 
+    color: var(--accent); 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+}
+
+/* --- FORM ELEMENTS --- */
+input, select { 
+    width: 100%; 
+    padding: 12px; 
+    margin-bottom: 10px; 
+    border: 1px solid var(--border); 
+    border-radius: 8px; 
+    box-sizing: border-box; 
+    font-size: 14px;
+    background-color: #ffffff;
+}
+
+.input-group { 
+    display: flex; 
+    gap: 10px; 
+    margin-bottom: 10px; 
+    align-items: center; 
+}
+
 .input-group div { width: 100%; }
 .input-group input, .input-group select { margin-bottom: 0; }
 
-.summary-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-.summary-table th { padding: 12px 5px; font-size: 10px; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; }
-.summary-table td { padding: 12px 5px; text-align: center; font-size: 13px; border-bottom: 1px solid #f8fafc; }
-.name-cell { font-weight: 800; color: #1e293b; text-align: left !important; padding-left: 15px !important; }
+/* --- PROFESSIONAL TABLES --- */
+.pro-table, .summary-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+}
 
-.btn-primary { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 700; }
-.btn-logout { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; }
+/* Specific Alignment for Meal Log */
+#mealCalendar th, #mealCalendar td {
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 1px solid #f1f5f9;
+    min-width: 85px; /* Ensures names don't wrap awkwardly */
+}
 
-.pro-table { width: 100%; border-collapse: collapse; }
-.bazar-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; }
+#mealCalendar th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+#mealCalendar td:first-child, #mealCalendar th:first-child {
+    min-width: 40px;
+    position: sticky; /* Keeps "Day" visible while scrolling names */
+    left: 0;
+    background: white;
+    font-weight: bold;
+    z-index: 1;
+}
+
+/* Summary Table Styling */
+.summary-table th { 
+    padding: 12px 5px; 
+    font-size: 10px; 
+    color: #94a3b8; 
+    text-transform: uppercase; 
+    border-bottom: 1px solid #f1f5f9; 
+}
+
+.summary-table td { 
+    padding: 12px 5px; 
+    text-align: center; 
+    font-size: 13px; 
+    border-bottom: 1px solid #f8fafc; 
+}
+
+.name-cell { 
+    font-weight: 800; 
+    color: var(--primary); 
+    text-align: left !important; 
+    padding-left: 15px !important; 
+}
+
+/* --- BUTTONS --- */
+.btn-primary { 
+    background: var(--primary); 
+    color: white; 
+    border: none; 
+    padding: 14px; 
+    border-radius: 8px; 
+    width: 100%; 
+    cursor: pointer; 
+    font-weight: 700; 
+    transition: opacity 0.2s;
+}
+
+.btn-primary:hover { opacity: 0.9; }
+
+.btn-logout { 
+    background: var(--danger); 
+    color: white; 
+    border: none; 
+    padding: 6px 14px; 
+    border-radius: 20px; 
+    cursor: pointer; 
+    font-size: 11px; 
+    font-weight: 600;
+}
+
+/* --- BAZAR LIST --- */
+.bazar-row { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding: 14px; 
+    border-bottom: 1px solid #f1f5f9; 
+}
+
+.bazar-info b { font-size: 14px; color: var(--primary); }
+.bazar-info small { color: var(--text-muted); font-size: 11px; }
+
+/* --- MOBILE & RESPONSIVE --- */
+@media (max-width: 600px) {
+    body { padding: 5px; }
+    
+    .dashboard-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .card { padding: 15px; border-radius: 8px; }
+
+    /* Make large tables scrollable sideways on tiny screens */
+    .table-container, #mealCalendar {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
 
 @media print {
-    .tabs, .dashboard-header, .btn-primary, .admin-sidebar { display: none !important; }
-    .card { border: none; }
-}
-#mealCalendar th {
-    padding: 10px 15px;
-    min-width: 80px;
-    font-size: 12px;
+    .tabs, .dashboard-header, .btn-primary, .admin-sidebar, .month-picker { display: none !important; }
+    .card { border: none; padding: 0; }
+    body { background: white; }
 }
