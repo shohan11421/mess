@@ -146,4 +146,61 @@ async function afterLogin() {
     document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
     if(isAdmin) { document.getElementById("adminTabBtn").style.display = "block"; document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); }
     fetchData();
+    if(isAdmin) { 
+    document.getElementById("adminTabBtn").style.display = "block"; 
+    document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); 
 }
+
+}
+window.calculateMonthlyCost = async () => {
+    const rent = Number(document.getElementById("rentCost").value || 0);
+    const gas = Number(document.getElementById("gasCost").value || 0);
+    const elec = Number(document.getElementById("electricityCost").value || 0);
+    const wifi = Number(document.getElementById("wifiCost").value || 0);
+    const khala = Number(document.getElementById("khalaCost").value || 0);
+
+    const extraTotal = rent + gas + elec + wifi + khala;
+    const perHeadExtra = extraTotal / membersList.length;
+
+    const vMonth = document.getElementById("viewMonth").value;
+    const [y, m] = vMonth.split('-').map(Number);
+    const first = `${vMonth}-01`;
+    const last = `${vMonth}-${new Date(y, m, 0).getDate()}`;
+
+    const { data: meals } = await supabase.from('meals').select('*').gte('date', first).lte('date', last);
+    const { data: bazar } = await supabase.from('bazar').select('*').gte('date', first).lte('date', last);
+
+    const totalMeals = meals.length;
+    const totalBazar = bazar.reduce((s, b) => s + b.price, 0);
+    const mealRate = totalMeals ? totalBazar / totalMeals : 0;
+
+    let html = "";
+
+    membersList.forEach(m => {
+        const mMeals = meals.filter(x => x.member === m).length;
+        const mPaid = bazar.filter(x => x.member === m).reduce((s, b) => s + b.price, 0);
+        const mealCost = mMeals * mealRate;
+        const balance = mPaid - mealCost; // + = advance, - = due
+
+        // Core logic you requested
+        const finalAmount = balance >= 0
+            ? (perHeadExtra - balance)
+            : (perHeadExtra + Math.abs(balance));
+
+        html += `
+            <tr>
+                <td style="text-align:left;font-weight:700">${m}</td>
+                <td style="color:${balance>=0?'#10b981':'#ef4444'}">
+                    ${balance.toFixed(2)}৳
+                </td>
+                <td>${perHeadExtra.toFixed(2)}৳</td>
+                <td style="font-weight:800">
+                    ${finalAmount.toFixed(2)}৳
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("monthlyCostBody").innerHTML = html;
+};
+
