@@ -29,80 +29,27 @@
                 <button id="adminTabBtn" class="tab-btn" style="display:none" onclick="openTab('admin')">Admin</button>
             </nav>
 
-            <div id="calendar" class="tab-content">
-                <div class="card">
-                    <h3>Add Meal</h3>
-                    <select id="mealMember"></select>
-                    <div class="input-group">
-                        <select id="mealDateType" onchange="toggleAdminDate()">
-                            <option value="today">Today</option>
-                            <option value="tomorrow">Tomorrow</option>
-                            <option value="custom" class="admin-only" style="display:none">Custom Date</option>
-                        </select>
-                        <input type="number" id="mealCount" value="1" min="1">
-                    </div>
-                    <input type="date" id="mealDate" class="admin-only" style="display:none; margin-bottom:12px;">
-                    <button onclick="addMeal()" class="btn-primary">Save Meal</button>
-                </div>
-                <div class="card">
-                    <div class="flex-between" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                        <h3>Meal Log</h3>
-                        <select id="viewMonth" onchange="fetchData()" class="month-picker"></select>
-                    </div>
-                    <div style="overflow-x:auto"><table id="mealCalendar" class="pro-table"></table></div>
-                </div>
-            </div>
-
-            <div id="bazar" class="tab-content" style="display:none">
-                <div class="card">
-                    <h3>Add New Expense</h3>
-                    <select id="bazarMember"></select>
-                    <div class="input-group">
-                        <input type="text" id="bazarItem" placeholder="Item name">
-                        <input type="number" id="bazarPrice" placeholder="Price (৳)">
-                    </div>
-                    <select id="bazarDateType" class="admin-only" style="display:none; margin-bottom:12px;" onchange="toggleBazarAdminDate()">
-                        <option value="today">Today</option>
-                        <option value="custom">Custom Date</option>
-                    </select>
-                    <input type="date" id="bazarDate" class="admin-only" style="display:none; margin-bottom:12px;">
-                    
-                    <button onclick="addBazar()" class="btn-primary">Save Entry</button>
-                </div>
-
-                <div class="admin-layout">
-                    <aside class="admin-sidebar">
-                        <h4>Members</h4>
-                        <div id="bazarMemberNav" class="member-nav"></div>
-                        <button onclick="filterBazarByMember('ALL')" class="btn-all-list">View All List</button>
-                    </aside>
-                    <main class="admin-main">
-                        <div class="admin-data-header"><h3 id="bazarCurrentViewTitle">Expense List</h3></div>
-                        <div class="card" style="padding:10px;"><div id="bazarListContent" class="admin-scroll"></div></div>
-                    </main>
-                </div>
-            </div>
-
             <div id="summary" class="tab-content" style="display:none">
                 <div id="summaryContent"></div>
+                
                 <div id="finalSettlementWrapper" style="display:none; margin-top: 30px;">
-    <div class="admin-data-header" style="background: #059669; border-radius: 12px 12px 0 0;">
-        <h3 style="color: white; margin: 0;">Final Settlement Table</h3>
-    </div>
-    <div class="table-container" style="border: 2px solid #059669; border-top: none; background: white;">
-        <table class="summary-table">
-            <thead>
-                <tr>
-                    <th style="text-align:left; padding-left:15px;">MEMBER</th>
-                    <th>MEAL BAL (A)</th>
-                    <th>OTHER BILLS (B)</th>
-                    <th>NET PAYABLE</th>
-                </tr>
-            </thead>
-            <tbody id="finalSettlementBody"></tbody>
-        </table>
-    </div>
-</div>
+                    <div class="admin-data-header" style="background: #059669; border-radius: 12px 12px 0 0;">
+                        <h3 style="color: white; margin: 0;">Final Monthly Settlement</h3>
+                    </div>
+                    <div class="table-container" style="border: 2px solid #059669; border-top: none; background: white;">
+                        <table class="summary-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left; padding-left:15px;">MEMBER</th>
+                                    <th>MEAL BAL (A)</th>
+                                    <th>OTHER BILLS (B)</th>
+                                    <th>NET PAYABLE</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finalSettlementBody"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <div id="admin" class="tab-content" style="display:none">
@@ -110,6 +57,12 @@
                     <aside class="admin-sidebar">
                         <h4>Manage</h4>
                         <div id="adminMemberList" class="member-nav"></div>
+                        <div style="margin-top:20px;">
+                            <h4 style="font-size:10px;">Publication</h4>
+                            <button id="publishBtn" onclick="toggleSettlement()" class="btn-all-list" style="background: #fff7ed; border:1px solid #f59e0b; color:#b45309;">
+                                Show Settlement: OFF
+                            </button>
+                        </div>
                     </aside>
                     <main class="admin-main">
                         <div class="admin-data-header"><h3 id="adminCurrentTitle">Select Member</h3></div>
@@ -123,20 +76,14 @@
                                 <div class="admin-scroll"><table class="pro-table mini-table"><tbody id="adminBazarBody"></tbody></table></div>
                             </div>
                         </div>
-                        <div class="card admin-card" style="border-top: 4px solid #f59e0b;">
-    <div class="card-header"><h4>Publication Settings</h4></div>
-    <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">Toggle visibility of the Final Settlement table for members.</p>
-    <button id="publishBtn" onclick="toggleSettlement()" class="btn-primary" style="background: #f59e0b;">
-        Show Final Settlement: OFF
-    </button>
-</div>
                     </main>
                 </div>
             </div>
+
+            <div id="calendar" class="tab-content">...</div>
+            <div id="bazar" class="tab-content" style="display:none">...</div>
         </div>
     </div>
     <script type="module" src="app.js"></script>
 </body>
 </html>
-
-
