@@ -6,6 +6,13 @@
     <title>Engineers_Hub Mess Pro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        .btn-green { background: #10b981; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-whatsapp { background: #25d366; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-flex { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
+        @media (max-width: 480px) { .btn-flex button { flex: 1; font-size: 12px; padding: 12px 5px; } }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -23,11 +30,11 @@
             </header>
 
             <div id="bazarAlert" style="display:none; margin-bottom: 15px;">
-                <div class="card duty-card">
-                    <span style="font-size: 24px;">🛒</span>
+                <div class="card" style="background: #fffbeb; border: 1px solid #f59e0b; padding: 12px; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">🛒</span>
                     <div style="flex: 1;">
-                        <p class="label-tiny">Today's Bazar Duty</p>
-                        <h4 id="todayBazarMember">Loading...</h4>
+                        <p style="margin: 0; font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase;">Today's Bazar Duty</p>
+                        <h4 id="todayBazarMember" style="margin: 0; color: #b45309; font-size: 16px;">Loading...</h4>
                     </div>
                 </div>
             </div>
@@ -51,26 +58,26 @@
                     <button onclick="addMeal()" class="btn-primary">Save Meal</button>
                 </div>
                 <div class="card">
-                    <div class="flex-between">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
                         <h3>Meal Log</h3>
                         <select id="viewMonth" onchange="fetchData()" class="month-picker"></select>
                     </div>
-                    <div class="table-container"><table id="mealCalendar" class="pro-table"></table></div>
+                    <div style="overflow-x:auto"><table id="mealCalendar" class="pro-table"></table></div>
                 </div>
             </div>
 
             <div id="bazar" class="tab-content" style="display:none">
                 <div class="card">
                     <h3>Bazar Schedule</h3>
-                    <div id="bazarScheduleList" class="schedule-grid"></div>
-                    <div class="admin-only" style="display:none; border-top:1px solid #eee; margin-top:15px; padding-top:15px;">
-                        <h4>Assign Duty</h4>
+                    <div id="bazarScheduleList" class="schedule-grid" style="margin-bottom: 15px;"></div>
+                    <div class="admin-only" style="display:none; border-top:1px solid #eee; padding-top:15px;">
+                        <h4 style="margin-bottom:10px">Assign Bazar Duty</h4>
                         <div class="input-group">
                             <input type="date" id="scheduleDate">
                             <select id="scheduleMember"></select>
                         </div>
-                        <input type="text" id="scheduleItems" placeholder="Items to bring...">
-                        <button onclick="saveSchedule()" class="btn-primary" style="margin-top:8px;">Update Schedule</button>
+                        <input type="text" id="scheduleItems" placeholder="Items to bring..." style="margin-top:5px; width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; box-sizing: border-box;">
+                        <button onclick="saveSchedule()" class="btn-primary" style="background:var(--accent); margin-top:8px; width:100%;">Update Schedule</button>
                     </div>
                 </div>
 
@@ -99,15 +106,12 @@
 
             <div id="billsTab" class="tab-content" style="display:none">
                 <div class="card">
-                    <div class="flex-between" style="margin-bottom:15px;">
-                        <h3>Monthly Bill Records</h3>
-                        <button onclick="window.clearBillInputs()" class="btn-danger-small">Reset Values</button>
-                    </div>
-                    <div id="billsContent" class="table-container"></div>
+                    <div class="admin-data-header"><h3>Monthly Bill Records</h3></div>
+                    <div id="billsContent" class="table-container" style="overflow-x: auto;"></div>
                     
                     <div class="btn-flex">
                         <button onclick="saveMonthlyBills()" class="btn-primary" style="flex:2">💾 Save Cloud</button>
-                        <button onclick="window.printPDF(false)" class="btn-secondary">📥 PDF</button>
+                        <button onclick="window.printPDF(false)" class="btn-primary" style="background:#64748b">📥 PDF</button>
                         <button onclick="window.printPDF(true)" class="btn-green">📤 Share</button>
                         <button onclick="window.shareAsText()" class="btn-whatsapp">💬 WA</button>
                     </div>
