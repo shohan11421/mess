@@ -18,18 +18,20 @@ function getMemberMath(m, mList, bList) {
     
     const memberMeals = mList.filter(ml => ml.member === m).length;
     const memberPaid = bList.filter(bl => bl.member === m).reduce((s, b) => s + b.price, 0);
+    
     const memberCost = memberMeals * rawRate;
+    const rawBalance = memberPaid - memberCost;
 
     return {
         meals: memberMeals,
         paid: memberPaid,
         rawCost: memberCost,
-        rawBalance: memberPaid - memberCost,
+        rawBalance: rawBalance,
         rateDisplay: rawRate.toFixed(2)
     };
 }
 
-// --- 2. DATA FETCHING ---
+// --- DATA FETCHING ---
 window.fetchData = async () => {
     const monthVal = document.getElementById("viewMonth").value;
     if (!monthVal) return;
@@ -59,16 +61,13 @@ window.fetchData = async () => {
     if(isAdmin) renderAdmin(meals, bazar);
 };
 
-// --- 3. RENDERING LOGIC ---
+// --- RENDERING LOGIC ---
 function renderSummary(mList, bList) {
     const totalBazar = bList.reduce((s, b) => s + b.price, 0);
     const totalMeals = mList.length;
     let netSurplus = 0, netOwed = 0;
 
-    let html = `<div class="card" style="background:#1e293b; color:white; padding:15px; margin-bottom:15px;">
-                    <p style="margin:0">Total Bazar: <b>${totalBazar}৳</b> | Meals: <b>${totalMeals}</b> | Rate: <b>${(totalMeals ? totalBazar/totalMeals : 0).toFixed(2)}৳</b></p>
-                </div>
-                <table class="summary-table pro-table"><thead><tr><th>Member</th><th>Meals</th><th>Cost</th><th>Paid</th><th>Balance</th></tr></thead><tbody>`;
+    let html = `<div class="card" style="background:#1e293b; color:white"><p>Total Bazar: <b>${totalBazar}৳</b> | Meals: <b>${totalMeals}</b> | Rate: <b>${(totalMeals ? totalBazar/totalMeals : 0).toFixed(2)}৳</b></p></div><table class="summary-table"><thead><tr><th>Member</th><th>Meals</th><th>Cost</th><th>Paid</th><th>Balance</th></tr></thead><tbody>`;
     
     membersList.forEach(m => {
         const stats = getMemberMath(m, mList, bList);
@@ -77,12 +76,20 @@ function renderSummary(mList, bList) {
         html += `<tr><td class="name-cell">${m}</td><td>${stats.meals}</td><td>${stats.rawCost.toFixed(2)}৳</td><td>${stats.paid}৳</td><td style="color:${bal >= 0 ? '#10b981' : '#ef4444'}; font-weight:bold">${bal}৳</td></tr>`;
     });
 
-    html += `</tbody><tfoot style="background: #f8fafc; font-size: 0.85em;"><tr><td colspan="5" style="text-align:center; padding: 10px; color: #64748b;">Audit: Surplus (${netSurplus.toFixed(2)}৳) vs Owed (${netOwed.toFixed(2)}৳)</td></tr></tfoot></table>`;
+    html += `</tbody><tfoot style="background: #f8fafc; font-size: 0.8em;"><tr><td colspan="5" style="text-align:center; padding: 10px; color: #64748b;">Audit: Surplus (${netSurplus.toFixed(2)}৳) vs Owed (${netOwed.toFixed(2)}৳)</td></tr></tfoot></table>`;
     document.getElementById("summaryContent").innerHTML = html;
 }
 
 window.renderBillsTab = (mList, bList, savedBills) => {
-    let html = `<table class="summary-table pro-table" id="printableTable"><thead><tr><th>Member</th><th>Rent</th><th>Wifi</th><th>Gas</th><th>Elec</th><th>Khala</th><th>Meal Bal</th><th>Total</th></tr></thead><tbody>`;
+    let html = `
+        <div style="margin-bottom:10px; display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between;">
+            <button onclick="window.clearBillInputs()" style="background:#ef4444; color:white; padding:8px 12px; border-radius:4px; border:none; cursor:pointer;">Clear All</button>
+            <div style="display:flex; gap:5px;">
+                <button onclick="window.printPDF(true)" style="background:#10b981; color:white; padding:8px 12px; border-radius:4px; border:none;">📤 Share PDF</button>
+                <button onclick="window.shareAsText()" style="background:#25d366; color:white; padding:8px 12px; border-radius:4px; border:none;">💬 WA Text</button>
+            </div>
+        </div>
+        <table class="summary-table" id="printableTable"><thead><tr><th>Member</th><th>Rent</th><th>Wifi</th><th>Gas</th><th>Elec</th><th>Khala</th><th>Meal Bal</th><th>Total</th></tr></thead><tbody>`;
     
     membersList.forEach(m => {
         const stats = getMemberMath(m, mList, bList);
@@ -90,11 +97,11 @@ window.renderBillsTab = (mList, bList, savedBills) => {
         const mealBal = Number(stats.rawBalance.toFixed(2));
         
         html += `<tr><td class="name-cell">${m}</td>
-            <td><input type="number" id="rent-${m}" value="${s.rent || ''}" class="mini-input" oninput="window.calcPersonalBill('${m}',${mealBal})"></td>
-            <td><input type="number" id="wifi-${m}" value="${s.wifi || ''}" class="mini-input" oninput="window.calcPersonalBill('${m}',${mealBal})"></td>
-            <td><input type="number" id="gas-${m}" value="${s.gas || ''}" class="mini-input" oninput="window.calcPersonalBill('${m}',${mealBal})"></td>
-            <td><input type="number" id="elec-${m}" value="${s.elec || ''}" class="mini-input" oninput="window.calcPersonalBill('${m}',${mealBal})"></td>
-            <td><input type="number" id="khala-${m}" value="${s.khala || ''}" class="mini-input" oninput="window.calcPersonalBill('${m}',${mealBal})"></td>
+            <td><input type="number" id="rent-${m}" value="${s.rent || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${mealBal})"></td>
+            <td><input type="number" id="wifi-${m}" value="${s.wifi || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${mealBal})"></td>
+            <td><input type="number" id="gas-${m}" value="${s.gas || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${mealBal})"></td>
+            <td><input type="number" id="elec-${m}" value="${s.elec || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${mealBal})"></td>
+            <td><input type="number" id="khala-${m}" value="${s.khala || ''}" class="mini-input" oninput="calcPersonalBill('${m}',${mealBal})"></td>
             <td style="font-weight:bold; color:${mealBal>=0?'#10b981':'#ef4444'}"><span id="status-val-${m}" data-bal="${mealBal}">${mealBal}</span>৳</td>
             <td id="final-${m}" style="font-weight:900;">0৳</td></tr>`;
     });
@@ -106,36 +113,7 @@ window.renderBillsTab = (mList, bList, savedBills) => {
     });
 };
 
-// --- 4. CORE CALC & SAVE ---
-window.calcPersonalBill = (m, mealBalance) => {
-    const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
-    const billsTotal = fields.reduce((sum, f) => sum + (Number(document.getElementById(`${f}-${m}`).value) || 0), 0);
-    const finalVal = Math.round(billsTotal - Number(mealBalance));
-    const target = document.getElementById(`final-${m}`);
-    if(target) {
-        target.innerText = finalVal + "৳";
-        target.style.color = finalVal > 0 ? "#ef4444" : "#10b981";
-    }
-};
-
-window.saveMonthlyBills = async () => {
-    const month = document.getElementById("viewMonth").value;
-    const updates = membersList.map(m => ({
-        month, member: m,
-        rent: Number(document.getElementById(`rent-${m}`).value) || 0,
-        wifi: Number(document.getElementById(`wifi-${m}`).value) || 0,
-        gas: Number(document.getElementById(`gas-${m}`).value) || 0,
-        elec: Number(document.getElementById(`elec-${m}`).value) || 0,
-        khala: Number(document.getElementById(`khala-${m}`).value) || 0,
-        meal_balance: Number(document.getElementById(`status-val-${m}`).dataset.bal),
-        total_payable: parseInt(document.getElementById(`final-${m}`).innerText) || 0
-    }));
-    const { error } = await supabase.from('monthly_bills').upsert(updates, { onConflict: 'month,member' });
-    if (error) alert("Error: " + error.message);
-    else alert("Cloud Update Successful!");
-};
-
-// --- 5. PDF & SHARING ---
+// --- CORE LOGIC: SHARING & PRINTING ---
 window.printPDF = async (shouldShare = false) => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'mm', 'a4'); 
@@ -151,21 +129,28 @@ window.printPDF = async (shouldShare = false) => {
         styles: { fontSize: 9, cellPadding: 2 },
         headStyles: { fillColor: [30, 41, 59] },
         didParseCell: function(data) {
+            // Capture the real-time input values for the PDF
             if (data.section === 'body' && data.column.index > 0 && data.column.index < 6) {
                 const member = membersList[data.row.index];
                 const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
-                const val = document.getElementById(`${fields[data.column.index - 1]}-${member}`).value;
-                data.cell.text = val || '0';
+                const fieldName = fields[data.column.index - 1];
+                const inputVal = document.getElementById(`${fieldName}-${member}`).value;
+                data.cell.text = inputVal || '0';
             }
         }
     });
 
     if (shouldShare && navigator.canShare) {
         const pdfBlob = doc.output('blob');
-        const file = new File([pdfBlob], `Bill_${month}.pdf`, { type: 'application/pdf' });
-        try { await navigator.share({ files: [file], title: `Mess Bill ${month}` }); } 
-        catch (err) { doc.save(`Bill_${month}.pdf`); }
-    } else { doc.save(`Bill_${month}.pdf`); }
+        const file = new File([pdfBlob], `Mess_Bill_${month}.pdf`, { type: 'application/pdf' });
+        try {
+            await navigator.share({ files: [file], title: `Mess Bill ${month}` });
+        } catch (err) { 
+            doc.save(`Mess_Bill_${month}.pdf`); 
+        }
+    } else {
+        doc.save(`Mess_Bill_${month}.pdf`);
+    }
 };
 
 window.shareAsText = () => {
@@ -178,7 +163,50 @@ window.shareAsText = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(report)}`, '_blank');
 };
 
-// --- 6. ADD DATA FUNCTIONS ---
+// --- CALC & SAVE LOGIC ---
+window.calcPersonalBill = (m, mealBalance) => {
+    const fields = ['rent', 'wifi', 'gas', 'elec', 'khala'];
+    const billsTotal = fields.reduce((sum, f) => sum + (Number(document.getElementById(`${f}-${m}`).value) || 0), 0);
+    const rawFinal = billsTotal - Number(mealBalance);
+    const roundedFinal = Math.round(rawFinal);
+    const target = document.getElementById(`final-${m}`);
+    if(target) {
+        target.innerText = roundedFinal + "৳";
+        target.style.color = roundedFinal > 0 ? "#ef4444" : "#10b981";
+    }
+};
+
+window.clearBillInputs = () => {
+    if(confirm("Reset all Rent/WiFi/Utility values to 0?")) {
+        document.querySelectorAll('.mini-input').forEach(input => input.value = '');
+        membersList.forEach(m => {
+            const mealBal = Number(document.getElementById(`status-val-${m}`).dataset.bal);
+            window.calcPersonalBill(m, mealBal);
+        });
+    }
+};
+
+window.saveMonthlyBills = async () => {
+    const month = document.getElementById("viewMonth").value;
+    const updates = membersList.map(m => {
+        const mealBal = Number(document.getElementById(`status-val-${m}`).dataset.bal) || 0;
+        const totalPayable = parseInt(document.getElementById(`final-${m}`).innerText.replace('৳', '')) || 0;
+        return {
+            month, member: m,
+            rent: Number(document.getElementById(`rent-${m}`).value) || 0,
+            wifi: Number(document.getElementById(`wifi-${m}`).value) || 0,
+            gas: Number(document.getElementById(`gas-${m}`).value) || 0,
+            elec: Number(document.getElementById(`elec-${m}`).value) || 0,
+            khala: Number(document.getElementById(`khala-${m}`).value) || 0,
+            meal_balance: mealBal,
+            total_payable: totalPayable
+        };
+    });
+    await supabase.from('monthly_bills').upsert(updates, { onConflict: 'month,member' });
+    alert("Cloud Update Successful!");
+};
+
+// --- UI UTILITIES (Bazar, Schedule, Admin, etc.) ---
 window.addMeal = async () => {
     const member = document.getElementById("mealMember").value;
     const count = parseInt(document.getElementById("mealCount").value);
@@ -195,7 +223,7 @@ window.addBazar = async () => {
     const member = document.getElementById("bazarMember").value;
     const dateInput = document.getElementById("bazarDateSource");
     let date = isAdmin ? dateInput.value : getToday();
-    if(item && price) { 
+    if(item && price && date) { 
         await supabase.from('bazar').insert([{ member, item, price, date, added_by: currentUser.id }]); 
         document.getElementById("bazarItem").value=""; document.getElementById("bazarPrice").value=""; 
         fetchData(); 
@@ -207,11 +235,22 @@ window.saveSchedule = async () => {
     const member = document.getElementById("scheduleMember").value;
     const items = document.getElementById("scheduleItems").value;
     if(!date || !member) return alert("Select date and member.");
-    await supabase.from('bazar_schedule').upsert([{ date, member, items_to_bring: items }], { onConflict: 'date' });
-    alert(`Assigned ${member}`); fetchData(); 
+    try {
+        const { error } = await supabase.from('bazar_schedule').upsert([{ date, member, items_to_bring: items }], { onConflict: 'date' });
+        if (error) throw error;
+        alert(`Assigned ${member}`);
+        document.getElementById("scheduleItems").value = ""; 
+        fetchData(); 
+    } catch (err) { alert("Error: " + err.message); }
 };
 
-// --- 7. UI UTILS ---
+window.deleteSchedule = async (date) => {
+    if(confirm(`Remove schedule for ${date}?`)) {
+        await supabase.from('bazar_schedule').delete().eq('date', date);
+        fetchData();
+    }
+};
+
 function renderPersonalStats(mList) {
     const name = membersList.find(m => currentUser.email.toUpperCase().includes(m)) || "User";
     const count = mList.filter(m => m.member === name).length;
@@ -220,8 +259,8 @@ function renderPersonalStats(mList) {
 
 function renderBazarList(bList) {
     document.getElementById("bazarMemberNav").innerHTML = `<button onclick="window.filterBazarByMember('ALL')">ALL</button>` + membersList.map(m => `<button class="${selectedBazarMember === m ? 'active' : ''}" onclick="window.filterBazarByMember('${m}')">${m}</button>`).join('');
-    let display = (selectedBazarMember !== 'ALL') ? bList.filter(b => b.member === selectedBazarMember) : bList;
-    document.getElementById("bazarListContent").innerHTML = display.slice().reverse().map(b => `<div class="bazar-row"><div class="bazar-info"><b>${b.item}</b><br><small>${b.member} • ${b.date}</small></div><b>${b.price}৳</b></div>`).join('') || '<p style="text-align:center">No records</p>';
+    let display = (selectedBazarMember && selectedBazarMember !== 'ALL') ? bList.filter(b => b.member === selectedBazarMember) : bList;
+    document.getElementById("bazarListContent").innerHTML = display.slice().reverse().map(b => `<div class="bazar-row"><div class="bazar-info"><b>${b.item}</b><br><small>${b.member} • ${b.date}</small></div><b>${b.price}৳</b></div>`).join('') || '<p style="text-align:center; padding:10px;">No records</p>';
 }
 
 function renderCalendar(mList, monthYear) {
@@ -243,22 +282,88 @@ function renderBazarSchedule(scheduleData) {
     if (!container) return;
     const today = getToday();
     container.innerHTML = scheduleData.length ? scheduleData.slice(0, 6).map(s => `
-        <div class="schedule-item ${s.date === today ? 'duty-today' : ''}" style="position:relative">
-            ${isAdmin ? `<button onclick="window.deleteSchedule('${s.date}')" style="position:absolute; top:2px; right:4px; border:none; background:none; color:red; cursor:pointer;">✕</button>` : ''}
+        <div class="schedule-item ${s.date === today ? 'duty-today' : ''}" style="position:relative; padding-top:15px;">
+            ${isAdmin ? `<button onclick="window.deleteSchedule('${s.date}')" style="position:absolute; top:2px; right:4px; border:none; background:none; color:#ef4444; font-weight:800; cursor:pointer;">✕</button>` : ''}
             <span>${s.date === today ? 'TODAY' : s.date.split('-').slice(1).join('/')}</span>
             <b>${s.member}</b>
+            ${s.items_to_bring ? `<div style="font-size:9px; margin-top:4px; color:#64748b; border-top:1px solid #ddd; pt-2px;">${s.items_to_bring}</div>` : ''}
         </div>
-    `).join('') : '<p>No schedule</p>';
+    `).join('') : '<p style="text-align:center; padding:10px;">No schedule</p>';
 }
 
 function updateDailyNotification(scheduleData) {
     const alertDiv = document.getElementById("bazarAlert");
-    const todayDuty = scheduleData.find(s => s.date === getToday());
+    const nameEl = document.getElementById("todayBazarMember");
+    const today = getToday();
+    const todayDuty = scheduleData.find(s => s.date === today);
     if (todayDuty) {
         alertDiv.style.display = "block";
-        document.getElementById("todayBazarMember").innerHTML = `${todayDuty.member} ${todayDuty.items_to_bring ? `<br><small>🛒 ${todayDuty.items_to_bring}</small>` : ''}`;
+        nameEl.innerHTML = `${todayDuty.member} ${todayDuty.items_to_bring ? `<br><small style="font-weight:400">🛒 Bring: ${todayDuty.items_to_bring}</small>` : ''}`;
     } else { alertDiv.style.display = "none"; }
 }
 
 window.renderAdmin = (meals, bazar) => {
-    document.getElementById("adminMemberList").innerHTML =
+    document.getElementById("adminMemberList").innerHTML = membersList.map(m => `<button class="${selectedAdminMember === m ? 'active' : ''}" onclick="window.filterAdminByMember('${m}')">${m}</button>`).join('');
+    if (!selectedAdminMember) return;
+    const fM = meals.filter(m => m.member === selectedAdminMember), fB = bazar.filter(b => b.member === selectedAdminMember);
+    const gM = fM.reduce((acc, curr) => { acc[curr.date] = (acc[curr.date] || 0) + 1; return acc; }, {});
+    document.getElementById("adminMealBody").innerHTML = Object.keys(gM).sort().reverse().map(d => `<tr><td>${d}</td><td>${gM[d]}</td><td><button onclick="window.adjustMeal('${selectedAdminMember}','${d}')">✕</button></td></tr>`).join('');
+    document.getElementById("adminBazarBody").innerHTML = fB.reverse().map(b => `<tr><td style="text-align:left">${b.item}<br><small>${b.date}</small></td><td>${b.price}৳</td><td><button onclick="window.del('bazar','${b.id}')">✕</button></td></tr>`).join('');
+};
+
+window.adjustMeal = async (m, d) => { 
+    const { data } = await supabase.from('meals').select('id').eq('member', m).eq('date', d).limit(1); 
+    if (data.length) await supabase.from('meals').delete().eq('id', data[0].id); 
+    fetchData(); 
+};
+window.del = async (t, id) => { if(confirm("Delete?")) { await supabase.from(t).delete().eq('id', id); fetchData(); }};
+window.filterBazarByMember = (n) => { selectedBazarMember = n; fetchData(); };
+window.filterAdminByMember = (n) => { selectedAdminMember = n; fetchData(); };
+window.openTab = (n) => { 
+    document.querySelectorAll(".tab-content").forEach(c => c.style.display="none"); 
+    document.getElementById(n).style.display="block"; 
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    event.currentTarget.classList.add("active");
+};
+window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
+
+document.addEventListener('DOMContentLoaded', () => {
+    supabase.auth.onAuthStateChange((event, session) => { 
+        if (session) { currentUser = session.user; afterLogin(); } 
+        else { document.getElementById("loginDiv").style.display = "block"; }
+    });
+    document.getElementById("loginBtn").onclick = async () => { 
+        await supabase.auth.signInWithPassword({ 
+            email: document.getElementById("email").value, 
+            password: document.getElementById("password").value 
+        }); 
+    };
+});
+
+async function afterLogin() {
+    isAdmin = (currentUser.email === "admin@mess.com");
+    document.getElementById("loginDiv").style.display = "none";
+    document.getElementById("appDiv").style.display = "block";
+    const vM = document.getElementById("viewMonth"); vM.innerHTML = "";
+    for(let i=0; i<3; i++) {
+        let t = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
+        vM.innerHTML += `<option value="${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}">${t.toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`;
+    }
+    if (isAdmin) {
+        document.getElementById("mealDateContainer").innerHTML = `<input type="date" id="mealDateSource" value="${getToday()}">`;
+        document.getElementById("bazarDateContainer").innerHTML = `<input type="date" id="bazarDateSource" value="${getToday()}">`;
+    } else {
+        document.getElementById("mealDateContainer").innerHTML = `<select id="mealDateSource"><option value="today">Today</option><option value="tomorrow">Tomorrow</option></select>`;
+        document.getElementById("bazarDateContainer").innerHTML = `<input type="text" id="bazarDateSource" value="Today" disabled>`;
+    }
+    const opt = isAdmin ? membersList.map(m => `<option>${m}</option>`).join('') : `<option>${membersList.find(m => currentUser.email.toUpperCase().includes(m)) || 'User'}</option>`;
+    document.getElementById("mealMember").innerHTML = document.getElementById("bazarMember").innerHTML = opt;
+    const scheduleSelect = document.getElementById("scheduleMember");
+    if (scheduleSelect) scheduleSelect.innerHTML = membersList.map(m => `<option value="${m}">${m}</option>`).join('');
+    if(isAdmin) { 
+        document.getElementById("adminTabBtn").style.display = "block"; 
+        document.getElementById("adminBillBtn").style.display = "block";
+        document.querySelectorAll(".admin-only").forEach(el => el.style.display = "block"); 
+    }
+    fetchData();
+}
