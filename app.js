@@ -4,7 +4,7 @@ const supabaseUrl = 'https://xjzyujkuqtxywcabeiaf.supabase.co';
 const supabaseKey = "sb_publishable_EQwjYIpX-jYondk86PwRmg_MhsrCgLJ"; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const membersList = ["SHOHAN", "NABIL", "TOMAL", "ABIR", "SHOJIB", "MASUM"]; 
+const membersList = ["SHOHAN", "RAFI", "RUBAYET", "SHOJIB"]; 
 let currentUser = null, isAdmin = false, selectedAdminMember = null, selectedBazarMember = 'ALL';
 
 const getToday = () => new Date().toLocaleDateString('en-CA');
